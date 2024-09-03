@@ -1,11 +1,99 @@
 ---
-title: "SINASC"
+title: "Analysis of Genetic Anomalies found on SINASC database"
+author: "BioHub Solutions"
+date: 03/09/2024
+date-format: DD/MM/YYYY
+format: html
+editor: visual
+code-fold: true
 ---
 
-## Quarto
+## Loading libraries
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+The main libraries are [read.dbc](https://github.com/danicat/read.dbc), [microdatasus](https://github.com/rfsaldanha/microdatasus) and [cid10](https://github.com/msrodrigues/cid10). Both are hosted on GitHub. Check the links to see how to install them. The other packages are for data manipulation, analysis and visualization.
+
+```{r, warning=FALSE, message=FALSE}
+
+#ETL
+library(read.dbc)
+library(microdatasus)
+library(DBI)
+library(RPostgres)
+
+#data manipulation
+library(tidyverse)
+library(janitor)
+library(cid10)
+
+#data viz
+library(ggplot2)
+library(patchwork)
+library(DT)
+library(htmltools)
+```
+
+## Downloading data from dataSUS
+
+What is dataSUS?....
+
+```{r, warning=FALSE, message=FALSE}
+
+#extract SINASC dataset
+sinasc = fetch_datasus(year_start = 2014,
+                       year_end = 2023,
+                       month_start = 1,
+                       month_end = 12,
+                       uf = "PE",
+                       information_system = "SINASC")
+
+```
+
+> NOTE: A characteristic of SINASC is that the dataset is release yearly and, as now, the data from 2023 is preliminary.
+
+## Data manipulation
+
+A few data cleaning, and transformation will be necessary to make the dataset more organized and accurate.
 
 ```{r}
-1 + 1
+
+#use the function process_sinac and clean names with janitor
+sinasc = process_sinasc(sinasc) |> 
+  clean_names()
+
+#remove deprecated collumns remaining from the function process_sinasc
+
+sinasc |> 
+  mutate(locnasc = locnasc_as_factor_data_locnasc,
+         idademae = idademae_as_factor_data_idademae,
+         estcivmae = estcivmae_as_factor_data_estcivmae,
+         escmae = escmae_as_factor_data_escmae, 
+         gestacao = gestacao_as_factor_data_gestacao,
+         parto = parto_as_factor_data_parto) |> 
+  select(-c(contains("_as_factor_"))) |> 
+  mutate(across(contador:codmunnasc, ~ as.numeric(.x))) |>
+  mutate(locnasc = as.factor(locnasc)) |> 
+  mutate(idademae = as.numeric(idademae)) |> 
+  mutate(across(estcivmae:escmae, ~ as.factor(.x))) |>
+  mutate(across(qtdfilvivo:codmunres, ~ as.numeric(.x))) |>
+  mutate(across(gestacao:consultas, ~ as.factor(.x))) |>
+  mutate(dtnasc = as.Date(dtnasc, tryFormats = "%Y-%m-%d")) |>
+  mutate(sexo = as.factor(sexo)) |> 
+  mutate(across(apgar1:apgar5, ~ as.numeric(.x))) |> 
+  mutate(peso = as.numeric(peso)) |> 
+  mutate(idanomal = as.factor(idanomal)) |> 
+  mutate(dtcadastro = as.Date(dtcadastro, tryFormats = "%Y-%m-%d")) |>
+  mutate(dtrecebim = as.Date(dtrecebim, tryFormats = "%Y-%m-%d")) |>
+  mutate(across(naturalmae:codufnatu, ~ as.factor(.x))) |>
+  mutate(across(escmae2010:seriescmae, ~ as.numeric(.x))) |> 
+  mutate(dtnascmae = as.Date(dtnascmae, tryFormats = "%Y-%m-%d")) |>
+  mutate(racacormae = as.factor(racacormae)) |>   
+  mutate(across(qtdgestant:idadepai, ~ as.numeric(.x))) |>  
+  mutate(dtultmenst = as.Date(dtultmenst, tryFormats = "%Y-%m-%d")) |>
+  mutate(semagestac = as.numeric(semagestac)) |> 
+  mutate(tpmetestim = case_when(tpmetestim == 1 ~ "exame físico",
+                                tpmetestim == 2 ~ "outro método",
+                                tpmetestim == 9 ~ "ignorado")) |> 
+  mutate(tpmetestim = as.factor(tpmetestim)) |> 
+  mutate(across(consprenat:mesprenat, ~ as.numeric(.x))) |>  
+  glimpse()
 ```
