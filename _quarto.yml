@@ -1,5 +1,19 @@
 project:
-  title: "SINASC"
+  type: website
+  output-dir: docs
+
+website:
+  title: "Analysis of Genetic Anomalies found on SINASC database"
+  navbar:
+    left:
+      - href: SINASC.qmd
+        text: Home
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
 
 editor: visual
 
