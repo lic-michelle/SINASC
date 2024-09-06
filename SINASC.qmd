@@ -37,6 +37,7 @@ library(htmltools)
 What is dataSUS?....
 
 ```{r, warning=FALSE, message=FALSE}
+#| eval: false
 
 #extract SINASC dataset
 sinasc = fetch_datasus(year_start = 2014,
@@ -48,6 +49,15 @@ sinasc = fetch_datasus(year_start = 2014,
 
 #save into a RData
 save(sinasc, file = "nao_upar/sinasc.RData")
+```
+
+```{r, warning=FALSE, message=FALSE}
+#| echo: false
+
+
+#load object already dowloaded
+load("nao_upar/sinasc.RData")
+
 ```
 
 > NOTE: A characteristic of SINASC is that the dataset is release yearly and, as now, the data from 2023 is preliminary.
@@ -64,14 +74,15 @@ sinasc = process_sinasc(sinasc) |>
 
 #remove deprecated collumns remaining from the function process_sinasc
 
-sinasc |> 
+sinasc = sinasc |> 
+  mutate(entry = rownames_to_column()) |> 
   mutate(locnasc = locnasc_as_factor_data_locnasc,
          idademae = idademae_as_factor_data_idademae,
          estcivmae = estcivmae_as_factor_data_estcivmae,
          escmae = escmae_as_factor_data_escmae, 
          gestacao = gestacao_as_factor_data_gestacao,
          parto = parto_as_factor_data_parto) |> 
-  select(-c(contains("_as_factor_"))) |> 
+  select(-c(contains("_as_factor_"))) |>
   mutate(across(contador:codmunnasc, ~ as.numeric(.x))) |>
   mutate(locnasc = as.factor(locnasc)) |> 
   mutate(idademae = as.numeric(idademae)) |> 
@@ -137,5 +148,45 @@ sinasc |>
                                 escmaeagr1 == 10 ~ "ignorado",
                                 escmaeagr1 == 11 ~ "fundamental II incompleto ou inespecífico",
                                 escmaeagr1 == 12 ~ "ensino médio incompleto ou inespecífico")) |>
-  glimpse()
+  mutate(stdnepidem = case_when(stdnepidem == 1 ~ "sim",
+                                stdnepidem == 2 ~ "não")) |> 
+  mutate(stdnnova = case_when(stdnnova == 1 ~ "sim",
+                              stdnnova == 2 ~ "não")) |>
+  mutate(codpaisres = as.factor(codpaisres)) |> 
+  mutate(tprobson = as.numeric(tprobson)) |> 
+  mutate(paridade = case_when(paridade == 1 ~ "multípara",
+                              paridade == 2 ~ "nulípara")) |>  
+  mutate(across(kotelchuck:contador_2, ~ as.numeric(.x))) |>
+  mutate(across(codocupmae:mun_res_uf, ~ as.factor(.x))) |>
+  mutate(across(mun_res_lat:mun_res_area, ~ as.numeric(.x)))
+```
+
+## Load dataframe into a PostgreSQL database
+
+In order to make the dataset more accesible, we will finish the ETL process by loading the transformed object into a postgresql database, so anyone with access to it can make direct queries or use it with other pipelines downstream.
+
+```{r}
+
+#### criar uma conexão do R com o postgreSQL #####
+
+my_user = "postgres"
+my_password = "likaADM23" #coloque sua senha aqui
+
+con <- dbConnect(drv = RPostgres::Postgres(),
+                 dbname="postgres",
+                 host = "150.161.248.197",
+                 port = 5432,
+                 user = my_user,
+                 password = my_password)
+
+#### escrever o dataframe transformado para uma tabela no PostgreSQL ####
+dbWriteTable(conn = con,
+             name = "sinasc",   
+             value = sinasc,
+             field.types = c(entry = "SERIAL PRIMARY KEY"),
+             overwrite = TRUE)
+
+# fechar a conexão
+dbDisconnect(con)
+rm(con)
 ```
