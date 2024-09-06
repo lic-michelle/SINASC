@@ -46,6 +46,8 @@ sinasc = fetch_datasus(year_start = 2014,
                        uf = "PE",
                        information_system = "SINASC")
 
+#save into a RData
+save(sinasc, file = "nao_upar/sinasc.RData")
 ```
 
 > NOTE: A characteristic of SINASC is that the dataset is release yearly and, as now, the data from 2023 is preliminary.
@@ -94,6 +96,46 @@ sinasc |>
                                 tpmetestim == 2 ~ "outro método",
                                 tpmetestim == 9 ~ "ignorado")) |> 
   mutate(tpmetestim = as.factor(tpmetestim)) |> 
-  mutate(across(consprenat:mesprenat, ~ as.numeric(.x))) |>  
+  mutate(across(consprenat:mesprenat, ~ as.numeric(.x))) |> 
+  mutate(tpapresent = case_when(tpapresent == 1 ~ "cefálico",
+                                tpapresent == 2 ~ "pélvica ou podálica",
+                                tpapresent == 3 ~ "transversa",
+                                tpapresent == 9 ~ "ignorado")) |> 
+  mutate(sttrabpart = case_when(sttrabpart == 1 ~ "sim",
+                                sttrabpart == 2 ~ "não",
+                                sttrabpart == 3 ~ "não se aplica",
+                                sttrabpart == 9 ~ "ignorado")) |>
+  mutate(stcesparto = case_when(stcesparto == 1 ~ "sim",
+                                stcesparto == 2 ~ "não",
+                                stcesparto == 3 ~ "não se aplica",
+                                stcesparto == 9 ~ "ignorado")) |> 
+  mutate(tpnascassi = case_when(tpnascassi == 1 ~ "médico",
+                                tpnascassi == 2 ~ "enfermagem ou obstetriz",
+                                tpnascassi == 3 ~ "parteira",
+                                tpnascassi == 4 ~ "outros",
+                                tpnascassi == 9 ~ "ignorado")) |> 
+  mutate(tpdocresp = case_when(tpdocresp == 1 ~ "médico",
+                               tpdocresp == 2 ~ "enfermagem",
+                               tpdocresp == 3 ~ "parteira",
+                               tpdocresp == 4 ~ "funcionário do cartório",
+                               tpdocresp == 5 ~ "outros")) |> 
+  mutate(tpfuncresp = case_when(tpfuncresp == 1 ~ "CNES",
+                                tpfuncresp == 2 ~ "CRM",
+                                tpfuncresp == 3 ~ "COREM",
+                                tpfuncresp == 4 ~ "RG",
+                                tpfuncresp == 5 ~ "CPF")) |>
+  mutate(dtdeclarac = as.Date(dtdeclarac, tryFormats = "%Y-%m-%d")) |>
+  mutate(escmaeagr1 = case_when(escmaeagr1 == 0  ~ "sem escolaridade",
+                                escmaeagr1 == 2  ~ "fundamental incompleto",
+                                escmaeagr1 == 3  ~ "fundamental I completo",
+                                escmaeagr1 == 4  ~ "fundamental II incompleto",
+                                escmaeagr1 == 5  ~ "fundamental II completo",
+                                escmaeagr1 == 6  ~ "ensino médio incompleto",
+                                escmaeagr1 == 7  ~ "ensino médio completo",
+                                escmaeagr1 == 8  ~ "superior incompleto",
+                                escmaeagr1 == 9  ~ "superior completo",
+                                escmaeagr1 == 10 ~ "ignorado",
+                                escmaeagr1 == 11 ~ "fundamental II incompleto ou inespecífico",
+                                escmaeagr1 == 12 ~ "ensino médio incompleto ou inespecífico")) |>
   glimpse()
 ```
