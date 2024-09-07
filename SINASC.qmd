@@ -75,7 +75,7 @@ sinasc = process_sinasc(sinasc) |>
 #remove deprecated collumns remaining from the function process_sinasc
 
 sinasc = sinasc |> 
-  mutate(entry = rownames_to_column()) |> 
+  rownames_to_column(var = "entry") |> 
   mutate(locnasc = locnasc_as_factor_data_locnasc,
          idademae = idademae_as_factor_data_idademae,
          estcivmae = estcivmae_as_factor_data_estcivmae,
@@ -159,34 +159,56 @@ sinasc = sinasc |>
   mutate(across(kotelchuck:contador_2, ~ as.numeric(.x))) |>
   mutate(across(codocupmae:mun_res_uf, ~ as.factor(.x))) |>
   mutate(across(mun_res_lat:mun_res_area, ~ as.numeric(.x)))
+
 ```
 
-## Load dataframe into a PostgreSQL database
+## Load the dataframe into a PostgreSQL database
 
 In order to make the dataset more accesible, we will finish the ETL process by loading the transformed object into a postgresql database, so anyone with access to it can make direct queries or use it with other pipelines downstream.
 
+> NOTE: create a file .env, in the project directory, to store your credentials. each row should contain one variable and its value (without quotes), such as:\
+> \
+> USER=postgres
+>
+> PASSWORD=r\>python
+
 ```{r}
 
-#### criar uma conexão do R com o postgreSQL #####
+#read the envionmental variables with the credentials
+readRenviron(".env")
 
-my_user = "postgres"
-my_password = "likaADM23" #coloque sua senha aqui
+con = dbConnect(drv = RPostgres::Postgres(),
+                dbname="data_sus",
+                host = Sys.getenv("HOST_ADRESS"),
+                port = 5432,
+                user = Sys.getenv("USER"),
+                password = Sys.getenv("PASSWORD"))
 
-con <- dbConnect(drv = RPostgres::Postgres(),
-                 dbname="postgres",
-                 host = "150.161.248.197",
-                 port = 5432,
-                 user = my_user,
-                 password = my_password)
-
-#### escrever o dataframe transformado para uma tabela no PostgreSQL ####
+#write the datafame as a SQL table
 dbWriteTable(conn = con,
              name = "sinasc",   
              value = sinasc,
              field.types = c(entry = "SERIAL PRIMARY KEY"),
              overwrite = TRUE)
 
-# fechar a conexão
+```
+
+To confirm that the load was successful, we can make a query to the database and see if the results are consistent:
+
+```{r, warning=FALSE, message=FALSE}
+
+#query for the 100 first rows of the table
+query = paste0("SELECT * FROM sinasc LIMIT 100;")
+result = dbGetQuery(con, query)
+
+#close the connection
 dbDisconnect(con)
 rm(con)
+
+#get an overview of the dataset
+glimpse(result, width = 75)
 ```
+
+> NOTE: As it is possible to see with glimpse(), the original factor variables in the dataframe where automatically converted into character when the data is pulled from the postgreSQL database.
+
+## Descriptive Analysis

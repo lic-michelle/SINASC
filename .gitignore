@@ -2,4 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+.env
 /nao_upar
