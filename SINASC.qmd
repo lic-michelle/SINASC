@@ -40,11 +40,11 @@ What is dataSUS?....
 #| eval: false
 
 #extract SINASC dataset
-sinasc = fetch_datasus(year_start = 2014,
+sinasc = fetch_datasus(year_start = 2013,
                        year_end = 2023,
                        month_start = 1,
                        month_end = 12,
-                       uf = "PE",
+                       uf = "all",
                        information_system = "SINASC")
 
 #save into a RData
@@ -162,6 +162,36 @@ sinasc = sinasc |>
 
 ```
 
+When making an internal data validation, we have detected that some values in the 'dtultmenst' variable are not in the format YYYY-MM-DD. Instead it is in the format YY-MM-DD. Therefore, we needed to fix this formating error prior to send the dataset to a postgreSQL database.
+
+```{r, warning=FALSE, message=FALSE}
+
+sinasc = sinasc |> 
+  mutate(dtultmenst = if_else(nchar(as.character(dtultmenst)) == 8, 
+                              paste0("20",as.character(dtultmenst)),
+                              as.character(dtultmenst))) |> 
+  mutate(dtultmenst = as.Date(dtultmenst, tryFormats = "%Y-%m-%d"))
+```
+
+The same happened for the 'dtnascmae' variable, however with three different types of formatting error.
+
+```{r, warning=FALSE, message=FALSE}
+
+sinasc = sinasc |>
+  mutate(dtnascmae = if_else(nchar(as.character(dtnascmae)) == 7, 
+                             paste0("200",as.character(dtnascmae)), 
+                             as.character(dtnascmae))) |> 
+  mutate(dtnascmae = if_else(nchar(as.character(dtnascmae)) == 8, 
+                             paste0("19",as.character(dtnascmae)),  
+                             as.character(dtnascmae))) |> 
+  mutate(dtnascmae = if_else(nchar(as.character(dtnascmae)) == 9, 
+                             paste0("1",as.character(dtnascmae)),   
+                             as.character(dtnascmae))) |> 
+  mutate(dtnascmae = as.Date(dtnascmae, tryFormats = "%Y-%m-%d")) 
+```
+
+> Furthermore, we detected an entry with the mother birth date as '1-03-23', which would be 2001-03-23, but the registered mother age was 29 years.
+
 ## Load the dataframe into a PostgreSQL database
 
 In order to make the dataset more accesible, we will finish the ETL process by loading the transformed object into a postgresql database, so anyone with access to it can make direct queries or use it with other pipelines downstream.
@@ -174,7 +204,7 @@ In order to make the dataset more accesible, we will finish the ETL process by l
 
 ```{r}
 
-#read the envionmental variables with the credentials
+#read the environment variables with the credentials
 readRenviron(".env")
 
 con = dbConnect(drv = RPostgres::Postgres(),
