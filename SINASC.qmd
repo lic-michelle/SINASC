@@ -40,7 +40,7 @@ What is dataSUS?....
 #| eval: false
 
 #extract SINASC dataset
-sinasc = fetch_datasus(year_start = 2013,
+sinasc = fetch_datasus(year_start = 2010,
                        year_end = 2023,
                        month_start = 1,
                        month_end = 12,
@@ -60,7 +60,7 @@ load("nao_upar/sinasc.RData")
 
 ```
 
-> NOTE: A characteristic of SINASC is that the dataset is release yearly and, as now, the data from 2023 is preliminary.
+> NOTE: A characteristic of SINASC is that the dataset is released yearly and, as now, the data from 2023 is preliminary.
 
 ## Data manipulation
 
@@ -74,7 +74,7 @@ sinasc = process_sinasc(sinasc) |>
 
 #remove deprecated collumns remaining from the function process_sinasc
 
-sinasc = sinasc |> 
+sinasc1 = sinasc1 |> 
   rownames_to_column(var = "entry") |> 
   mutate(locnasc = locnasc_as_factor_data_locnasc,
          idademae = idademae_as_factor_data_idademae,
@@ -192,9 +192,46 @@ sinasc = sinasc |>
 
 > Furthermore, we detected an entry with the mother birth date as '1-03-23', which would be 2001-03-23, but the registered mother age was 29 years.
 
+Next, we will create a category for when the child has only one anomaly or multiple anomalies and another category with prirority anomalies based on the CID-10 nomenclature.
+
+```{r, warning=FALSE, message=FALSE}
+
+
+anomalias_prioritarias = list(defeitos_tubo_neural = c("Q000", "Q001", "Q002", "Q010", "Q050"),
+                             microcefalia = c("Q020"),
+                             cardiopatias_congenitas = c("Q200", "Q210", "Q220","Q230", "Q240", "Q250", "Q260", "Q270", "Q280"),
+                             fendas_orais = c("Q350", "Q360", "Q370"),
+                             defeitos_orgaos_genitais = c("Q540","Q560"),
+                             defeitos_membros = c("Q660", "Q690", "Q710", "Q720", "Q730", "Q743"),
+                             defeitos_parede_abdominal = c("Q792", "Q793"),
+                             sindorme_down = c("Q900")
+)
+
+sinasc = sinasc |>
+  mutate(codanomal = gsub("X", "0", codanomal)) %>% 
+  mutate(codanomal = gsub(" ", "", codanomal)) %>% 
+  mutate(codanomal = gsub("(.{4})(?=.{1,})", "\\1;", codanomal, perl = TRUE)) %>% 
+  mutate(anomal_categ = case_when(nchar(codanomal) == 4 ~ "isolada",
+                                  nchar(codanomal) >= 5 ~ "múltipla",
+                                  is.na(codanomal) == TRUE ~ "sem_anomalia"
+         )) %>% 
+  mutate(anomal_prioritarias = case_when(grepl(paste(anomalias_prioritarias[[1]], collapse = "|"), codanomal) == TRUE ~ "defeitos_tubo_neural",
+                                         grepl(paste(anomalias_prioritarias[[2]], collapse = "|"), codanomal) == TRUE ~ "microcefalia",
+                                         grepl(paste(anomalias_prioritarias[[3]], collapse = "|"), codanomal) == TRUE ~ "cardiopatias_congenitas",
+                                         grepl(paste(anomalias_prioritarias[[4]], collapse = "|"), codanomal) == TRUE ~ "fendas_orais",
+                                         grepl(paste(anomalias_prioritarias[[5]], collapse = "|"), codanomal) == TRUE ~ "defeitos_orgaos_genitais",
+                                         grepl(paste(anomalias_prioritarias[[6]], collapse = "|"), codanomal) == TRUE ~ "defeitos_membros",
+                                         grepl(paste(anomalias_prioritarias[[7]], collapse = "|"), codanomal) == TRUE ~ "defeitos_parede_abdominal",
+                                         grepl(paste(anomalias_prioritarias[[8]], collapse = "|"), codanomal) == TRUE ~ "sindorme_down",
+                                         (idanomal == "Sim" &
+                                           grepl(paste(as.character(unlist(anomalias_prioritarias)), collapse = "|"), codanomal) == FALSE) ~ "outras_anomalias"
+))
+
+```
+
 ## Load the dataframe into a PostgreSQL database
 
-In order to make the dataset more accesible, we will finish the ETL process by loading the transformed object into a postgresql database, so anyone with access to it can make direct queries or use it with other pipelines downstream.
+In order to make the dataset more accessible, we will finish the ETL process by loading the transformed object into a postgresql database, so anyone with access to it can make direct queries or use it with other pipelines downstream.
 
 > NOTE: create a file .env, in the project directory, to store your credentials. each row should contain one variable and its value (without quotes), such as:\
 > \
