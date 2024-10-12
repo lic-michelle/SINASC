@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="BioHub Solutions">
+<meta name="dcterms.date" content="2024-09-03">
+
+<title>Analysis of Genetic Anomalies found on SINASC database</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="./SINASC.html" rel="" target="" aria-current="page">
+ <span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./fatores.html" rel="" target="">
+ <span class="menu-text">Descriptive Analysis</span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools ms-auto">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#loading-libraries" id="toc-loading-libraries" class="nav-link active" data-scroll-target="#loading-libraries">Loading libraries</a></li>
+  <li><a href="#downloading-data-from-datasus" id="toc-downloading-data-from-datasus" class="nav-link" data-scroll-target="#downloading-data-from-datasus">Downloading data from dataSUS</a></li>
+  <li><a href="#data-manipulation" id="toc-data-manipulation" class="nav-link" data-scroll-target="#data-manipulation">Data manipulation</a></li>
+  <li><a href="#load-the-dataframe-into-a-postgresql-database" id="toc-load-the-dataframe-into-a-postgresql-database" class="nav-link" data-scroll-target="#load-the-dataframe-into-a-postgresql-database">Load the dataframe into a PostgreSQL database</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Analysis of Genetic Anomalies found on SINASC database</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>BioHub Solutions </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">09/03/2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="loading-libraries" class="level2">
+<h2 class="anchored" data-anchor-id="loading-libraries">Loading libraries</h2>
+<p>The main libraries are <a href="https://github.com/danicat/read.dbc">read.dbc</a>, <a href="https://github.com/rfsaldanha/microdatasus">microdatasus</a> and <a href="https://github.com/msrodrigues/cid10">cid10</a>. Both are hosted on GitHub. Check the links to see how to install them. The other packages are for data manipulation, analysis and visualization.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ETL</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(read.dbc)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(microdatasus)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DBI)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RPostgres)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#data manipulation</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cid10)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#statistics</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">#data viz</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggpubr)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DT)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(htmltools)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="downloading-data-from-datasus" class="level2">
+<h2 class="anchored" data-anchor-id="downloading-data-from-datasus">Downloading data from dataSUS</h2>
+<p>What is dataSUS?….</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#extract SINASC dataset</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>sinasc <span class="ot">=</span> <span class="fu">fetch_datasus</span>(<span class="at">year_start =</span> <span class="dv">2010</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">year_end =</span> <span class="dv">2023</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">month_start =</span> <span class="dv">1</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">month_end =</span> <span class="dv">12</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                       <span class="at">uf =</span> <span class="st">"all"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                       <span class="at">information_system =</span> <span class="st">"SINASC"</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">#save into a RData</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(sinasc, <span class="at">file =</span> <span class="st">"nao_upar/sinasc.RData"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<blockquote class="blockquote">
+<p>NOTE: A characteristic of SINASC is that the dataset is released yearly and, as now, the data from 2023 is preliminary.</p>
+</blockquote>
+</section>
+<section id="data-manipulation" class="level2">
+<h2 class="anchored" data-anchor-id="data-manipulation">Data manipulation</h2>
+<p>A few data cleaning, and transformation will be necessary to make the dataset more organized and accurate.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#use the function process_sinac and clean names with janitor</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>sinasc <span class="ot">=</span> <span class="fu">process_sinasc</span>(sinasc) <span class="sc">|&gt;</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#remove deprecated collumns remaining from the function process_sinasc</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>sinasc1 <span class="ot">=</span> sinasc1 <span class="sc">|&gt;</span> </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="at">var =</span> <span class="st">"entry"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">locnasc =</span> locnasc_as_factor_data_locnasc,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">idademae =</span> idademae_as_factor_data_idademae,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">estcivmae =</span> estcivmae_as_factor_data_estcivmae,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">escmae =</span> escmae_as_factor_data_escmae, </span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">gestacao =</span> gestacao_as_factor_data_gestacao,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">parto =</span> parto_as_factor_data_parto) <span class="sc">|&gt;</span> </span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(<span class="fu">contains</span>(<span class="st">"_as_factor_"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(contador<span class="sc">:</span>codmunnasc, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">|&gt;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">locnasc =</span> <span class="fu">as.factor</span>(locnasc)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">idademae =</span> <span class="fu">as.numeric</span>(idademae)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(estcivmae<span class="sc">:</span>escmae, <span class="sc">~</span> <span class="fu">as.factor</span>(.x))) <span class="sc">|&gt;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(qtdfilvivo<span class="sc">:</span>codmunres, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">|&gt;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(gestacao<span class="sc">:</span>consultas, <span class="sc">~</span> <span class="fu">as.factor</span>(.x))) <span class="sc">|&gt;</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtnasc =</span> <span class="fu">as.Date</span>(dtnasc, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sexo =</span> <span class="fu">as.factor</span>(sexo)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(apgar1<span class="sc">:</span>apgar5, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">|&gt;</span> </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">peso =</span> <span class="fu">as.numeric</span>(peso)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">idanomal =</span> <span class="fu">if_else</span>(<span class="fu">is.na</span>(codanomal) <span class="sc">==</span> <span class="cn">TRUE</span>, <span class="st">"não"</span>, <span class="st">"sim"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">idanomal =</span> <span class="fu">as.factor</span>(idanomal)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtcadastro =</span> <span class="fu">as.Date</span>(dtcadastro, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtrecebim =</span> <span class="fu">as.Date</span>(dtrecebim, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(naturalmae<span class="sc">:</span>codufnatu, <span class="sc">~</span> <span class="fu">as.factor</span>(.x))) <span class="sc">|&gt;</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(escmae2010<span class="sc">:</span>seriescmae, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">|&gt;</span> </span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtnascmae =</span> <span class="fu">as.Date</span>(dtnascmae, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">racacormae =</span> <span class="fu">as.factor</span>(racacormae)) <span class="sc">|&gt;</span>   </span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(qtdgestant<span class="sc">:</span>idadepai, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">|&gt;</span>  </span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtultmenst =</span> <span class="fu">as.Date</span>(dtultmenst, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">semagestac =</span> <span class="fu">as.numeric</span>(semagestac)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tpmetestim =</span> <span class="fu">case_when</span>(tpmetestim <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"exame físico"</span>,</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>                                tpmetestim <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"outro método"</span>,</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>                                tpmetestim <span class="sc">==</span> <span class="dv">9</span> <span class="sc">~</span> <span class="st">"ignorado"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tpmetestim =</span> <span class="fu">as.factor</span>(tpmetestim)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(consprenat<span class="sc">:</span>mesprenat, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">|&gt;</span> </span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tpapresent =</span> <span class="fu">case_when</span>(tpapresent <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"cefálico"</span>,</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>                                tpapresent <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"pélvica ou podálica"</span>,</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>                                tpapresent <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"transversa"</span>,</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>                                tpapresent <span class="sc">==</span> <span class="dv">9</span> <span class="sc">~</span> <span class="st">"ignorado"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sttrabpart =</span> <span class="fu">case_when</span>(sttrabpart <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"sim"</span>,</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>                                sttrabpart <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"não"</span>,</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>                                sttrabpart <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"não se aplica"</span>,</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>                                sttrabpart <span class="sc">==</span> <span class="dv">9</span> <span class="sc">~</span> <span class="st">"ignorado"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">stcesparto =</span> <span class="fu">case_when</span>(stcesparto <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"sim"</span>,</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>                                stcesparto <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"não"</span>,</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>                                stcesparto <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"não se aplica"</span>,</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>                                stcesparto <span class="sc">==</span> <span class="dv">9</span> <span class="sc">~</span> <span class="st">"ignorado"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tpnascassi =</span> <span class="fu">case_when</span>(tpnascassi <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"médico"</span>,</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>                                tpnascassi <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"enfermagem ou obstetriz"</span>,</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>                                tpnascassi <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"parteira"</span>,</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>                                tpnascassi <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"outros"</span>,</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>                                tpnascassi <span class="sc">==</span> <span class="dv">9</span> <span class="sc">~</span> <span class="st">"ignorado"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tpdocresp =</span> <span class="fu">case_when</span>(tpdocresp <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"médico"</span>,</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>                               tpdocresp <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"enfermagem"</span>,</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>                               tpdocresp <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"parteira"</span>,</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>                               tpdocresp <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"funcionário do cartório"</span>,</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>                               tpdocresp <span class="sc">==</span> <span class="dv">5</span> <span class="sc">~</span> <span class="st">"outros"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tpfuncresp =</span> <span class="fu">case_when</span>(tpfuncresp <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"CNES"</span>,</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>                                tpfuncresp <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"CRM"</span>,</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>                                tpfuncresp <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"COREM"</span>,</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>                                tpfuncresp <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"RG"</span>,</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>                                tpfuncresp <span class="sc">==</span> <span class="dv">5</span> <span class="sc">~</span> <span class="st">"CPF"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtdeclarac =</span> <span class="fu">as.Date</span>(dtdeclarac, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">escmaeagr1 =</span> <span class="fu">case_when</span>(escmaeagr1 <span class="sc">==</span> <span class="dv">0</span>  <span class="sc">~</span> <span class="st">"sem escolaridade"</span>,</span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">2</span>  <span class="sc">~</span> <span class="st">"fundamental incompleto"</span>,</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">3</span>  <span class="sc">~</span> <span class="st">"fundamental I completo"</span>,</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">4</span>  <span class="sc">~</span> <span class="st">"fundamental II incompleto"</span>,</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">5</span>  <span class="sc">~</span> <span class="st">"fundamental II completo"</span>,</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">6</span>  <span class="sc">~</span> <span class="st">"ensino médio incompleto"</span>,</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">7</span>  <span class="sc">~</span> <span class="st">"ensino médio completo"</span>,</span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">8</span>  <span class="sc">~</span> <span class="st">"superior incompleto"</span>,</span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">9</span>  <span class="sc">~</span> <span class="st">"superior completo"</span>,</span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">10</span> <span class="sc">~</span> <span class="st">"ignorado"</span>,</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">11</span> <span class="sc">~</span> <span class="st">"fundamental II incompleto ou inespecífico"</span>,</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>                                escmaeagr1 <span class="sc">==</span> <span class="dv">12</span> <span class="sc">~</span> <span class="st">"ensino médio incompleto ou inespecífico"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">stdnepidem =</span> <span class="fu">case_when</span>(stdnepidem <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"sim"</span>,</span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>                                stdnepidem <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"não"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">stdnnova =</span> <span class="fu">case_when</span>(stdnnova <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"sim"</span>,</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>                              stdnnova <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"não"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">codpaisres =</span> <span class="fu">as.factor</span>(codpaisres)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tprobson =</span> <span class="fu">as.numeric</span>(tprobson)) <span class="sc">|&gt;</span> </span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">paridade =</span> <span class="fu">case_when</span>(paridade <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"multípara"</span>,</span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>                              paridade <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"nulípara"</span>)) <span class="sc">|&gt;</span>  </span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(kotelchuck<span class="sc">:</span>contador_2, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">|&gt;</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(codocupmae<span class="sc">:</span>mun_res_uf, <span class="sc">~</span> <span class="fu">as.factor</span>(.x))) <span class="sc">|&gt;</span></span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(mun_res_lat<span class="sc">:</span>mun_res_area, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>When making an internal data validation, we have detected that some values in the ‘dtultmenst’ variable are not in the format YYYY-MM-DD. Instead it is in the format YY-MM-DD. Therefore, we needed to fix this formating error prior to send the dataset to a postgreSQL database.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>sinasc <span class="ot">=</span> sinasc <span class="sc">|&gt;</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtultmenst =</span> <span class="fu">if_else</span>(<span class="fu">nchar</span>(<span class="fu">as.character</span>(dtultmenst)) <span class="sc">==</span> <span class="dv">8</span>, </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                              <span class="fu">paste0</span>(<span class="st">"20"</span>,<span class="fu">as.character</span>(dtultmenst)),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                              <span class="fu">as.character</span>(dtultmenst))) <span class="sc">|&gt;</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtultmenst =</span> <span class="fu">as.Date</span>(dtultmenst, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>The same happened for the ‘dtnascmae’ variable, however with three different types of formatting error.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>sinasc <span class="ot">=</span> sinasc <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtnascmae =</span> <span class="fu">if_else</span>(<span class="fu">nchar</span>(<span class="fu">as.character</span>(dtnascmae)) <span class="sc">==</span> <span class="dv">7</span>, </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">paste0</span>(<span class="st">"200"</span>,<span class="fu">as.character</span>(dtnascmae)), </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">as.character</span>(dtnascmae))) <span class="sc">|&gt;</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtnascmae =</span> <span class="fu">if_else</span>(<span class="fu">nchar</span>(<span class="fu">as.character</span>(dtnascmae)) <span class="sc">==</span> <span class="dv">8</span>, </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">paste0</span>(<span class="st">"19"</span>,<span class="fu">as.character</span>(dtnascmae)),  </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">as.character</span>(dtnascmae))) <span class="sc">|&gt;</span> </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtnascmae =</span> <span class="fu">if_else</span>(<span class="fu">nchar</span>(<span class="fu">as.character</span>(dtnascmae)) <span class="sc">==</span> <span class="dv">9</span>, </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">paste0</span>(<span class="st">"1"</span>,<span class="fu">as.character</span>(dtnascmae)),   </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">as.character</span>(dtnascmae))) <span class="sc">|&gt;</span> </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dtnascmae =</span> <span class="fu">as.Date</span>(dtnascmae, <span class="at">tryFormats =</span> <span class="st">"%Y-%m-%d"</span>)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<blockquote class="blockquote">
+<p>Furthermore, we detected an entry with the mother birth date as ‘1-03-23’, which would be 2001-03-23, but the registered mother age was 29 years.</p>
+</blockquote>
+<p>Next, we will create a category for when the child has only one anomaly or multiple anomalies and another category with prirority anomalies based on the CID-10 nomenclature.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>anomalias_prioritarias <span class="ot">=</span> <span class="fu">list</span>(<span class="at">defeitos_tubo_neural =</span> <span class="fu">c</span>(<span class="st">"Q000"</span>, <span class="st">"Q001"</span>, <span class="st">"Q002"</span>, <span class="st">"Q010"</span>, <span class="st">"Q050"</span>),</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">microcefalia =</span> <span class="fu">c</span>(<span class="st">"Q020"</span>),</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">cardiopatias_congenitas =</span> <span class="fu">c</span>(<span class="st">"Q200"</span>, <span class="st">"Q210"</span>, <span class="st">"Q220"</span>,<span class="st">"Q230"</span>, <span class="st">"Q240"</span>, <span class="st">"Q250"</span>, <span class="st">"Q260"</span>, <span class="st">"Q270"</span>, <span class="st">"Q280"</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">fendas_orais =</span> <span class="fu">c</span>(<span class="st">"Q350"</span>, <span class="st">"Q360"</span>, <span class="st">"Q370"</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                             <span class="at">defeitos_orgaos_genitais =</span> <span class="fu">c</span>(<span class="st">"Q540"</span>,<span class="st">"Q560"</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                             <span class="at">defeitos_membros =</span> <span class="fu">c</span>(<span class="st">"Q660"</span>, <span class="st">"Q690"</span>, <span class="st">"Q710"</span>, <span class="st">"Q720"</span>, <span class="st">"Q730"</span>, <span class="st">"Q743"</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                             <span class="at">defeitos_parede_abdominal =</span> <span class="fu">c</span>(<span class="st">"Q792"</span>, <span class="st">"Q793"</span>),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                             <span class="at">sindorme_down =</span> <span class="fu">c</span>(<span class="st">"Q900"</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>sinasc <span class="ot">=</span> sinasc <span class="sc">|&gt;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">codanomal =</span> <span class="fu">gsub</span>(<span class="st">"X"</span>, <span class="st">"0"</span>, codanomal)) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">codanomal =</span> <span class="fu">gsub</span>(<span class="st">" "</span>, <span class="st">""</span>, codanomal)) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">codanomal =</span> <span class="fu">gsub</span>(<span class="st">"(.{4})(?=.{1,})"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">1;"</span>, codanomal, <span class="at">perl =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">anomal_categ =</span> <span class="fu">case_when</span>(<span class="fu">nchar</span>(codanomal) <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"isolada"</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                                  <span class="fu">nchar</span>(codanomal) <span class="sc">&gt;=</span> <span class="dv">5</span> <span class="sc">~</span> <span class="st">"múltipla"</span>,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                                  <span class="fu">is.na</span>(codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"sem_anomalia"</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>         )) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">anomal_prioritarias =</span> <span class="fu">case_when</span>(<span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">1</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"defeitos_tubo_neural"</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">2</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"microcefalia"</span>,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">3</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"cardiopatias_congenitas"</span>,</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">4</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"fendas_orais"</span>,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">5</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"defeitos_orgaos_genitais"</span>,</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">6</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"defeitos_membros"</span>,</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">7</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"defeitos_parede_abdominal"</span>,</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>                                         <span class="fu">grepl</span>(<span class="fu">paste</span>(anomalias_prioritarias[[<span class="dv">8</span>]], <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"sindorme_down"</span>,</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>                                         (idanomal <span class="sc">==</span> <span class="st">"Sim"</span> <span class="sc">&amp;</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>                                           <span class="fu">grepl</span>(<span class="fu">paste</span>(<span class="fu">as.character</span>(<span class="fu">unlist</span>(anomalias_prioritarias)), <span class="at">collapse =</span> <span class="st">"|"</span>), codanomal) <span class="sc">==</span> <span class="cn">FALSE</span>) <span class="sc">~</span> <span class="st">"outras_anomalias"</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<blockquote class="blockquote">
+<p>NOTE: In cases of newborns with multiple anomalies that fall into the same priority groups, the case is considered as one record, instead of two records.</p>
+</blockquote>
+</section>
+<section id="load-the-dataframe-into-a-postgresql-database" class="level2">
+<h2 class="anchored" data-anchor-id="load-the-dataframe-into-a-postgresql-database">Load the dataframe into a PostgreSQL database</h2>
+<p>In order to make the dataset more accessible, we will finish the ETL process by loading the transformed object into a postgresql database, so anyone with access to it can make direct queries or use it with other pipelines downstream.</p>
+<blockquote class="blockquote">
+<p>NOTE: create a file .env, in the project directory, to store your credentials. each row should contain one variable and its value (without quotes), such as:<br>
+<br>
+USER=postgres</p>
+<p>PASSWORD=r&gt;python</p>
+</blockquote>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#read the environment variables with the credentials</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">readRenviron</span>(<span class="st">".env"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>con <span class="ot">=</span> <span class="fu">dbConnect</span>(<span class="at">drv =</span> RPostgres<span class="sc">::</span><span class="fu">Postgres</span>(),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">dbname=</span><span class="st">"data_sus"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">host =</span> <span class="fu">Sys.getenv</span>(<span class="st">"HOST_ADDRESS"</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">port =</span> <span class="dv">5432</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">user =</span> <span class="fu">Sys.getenv</span>(<span class="st">"USER"</span>),</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">password =</span> <span class="fu">Sys.getenv</span>(<span class="st">"PASSWORD"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#write the datafame as a SQL table</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dbWriteTable</span>(<span class="at">conn =</span> con,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">name =</span> <span class="st">"sinasc"</span>,   </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">value =</span> sinasc,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>             <span class="at">field.types =</span> <span class="fu">c</span>(<span class="at">entry =</span> <span class="st">"SERIAL PRIMARY KEY"</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>             <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>To confirm that the load was successful, we can make a query to the database and see if the results are consistent:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#query for the 100 first rows of the table</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>query <span class="ot">=</span> <span class="fu">paste0</span>(<span class="st">"SELECT * FROM sinasc LIMIT 100;"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>result <span class="ot">=</span> <span class="fu">dbGetQuery</span>(con, query)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#close the connection</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(con)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">#get an overview of the dataset</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(result, <span class="at">width =</span> <span class="dv">75</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 100
+Columns: 80
+$ entry               &lt;int&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14…
+$ contador            &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14…
+$ origem              &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+$ codcart             &lt;dbl&gt; 5096, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+$ numregcart          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ dtregcart           &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ codestab            &lt;dbl&gt; 2515598, 3792595, 2798484, 5701929, 5701929, …
+$ codmunnasc          &lt;dbl&gt; 110002, 110011, 110030, 120001, 120001, 12000…
+$ locnasc             &lt;chr&gt; "Hospital", "Hospital", "Hospital", "Hospital…
+$ idademae            &lt;dbl&gt; 24, 22, 20, 21, 31, 23, 26, 21, 20, 31, 28, 2…
+$ estcivmae           &lt;chr&gt; "Casada", "Casada", "Solteira", "Solteira", "…
+$ escmae              &lt;chr&gt; "8 a 11 anos", "8 a 11 anos", "4 a 7 anos", "…
+$ qtdfilvivo          &lt;dbl&gt; 1, 1, 1, 3, 4, 1, 2, 2, 3, 3, 1, 3, 6, 3, 5, …
+$ qtdfilmort          &lt;dbl&gt; NA, 0, 0, 1, 1, 0, NA, 1, 2, 0, 0, 0, 0, 1, 3…
+$ codmunres           &lt;dbl&gt; 120040, 120040, 120040, 120001, 120001, 12000…
+$ codpaisres          &lt;chr&gt; "1", "1", "1", "1", "1", "1", "1", "1", "1", …
+$ gestacao            &lt;chr&gt; "37 a 41 semanas", "37 a 41 semanas", "37 a 4…
+$ gravidez            &lt;chr&gt; "única", "única", "única", "única", "única", …
+$ parto               &lt;chr&gt; "Cesáreo", "Cesáreo", "Vaginal", "Vaginal", "…
+$ consultas           &lt;chr&gt; "7 ou mais vezes", "4 a 6 vezes", "7 ou mais …
+$ dtnasc              &lt;date&gt; 2010-05-07, 2010-06-03, 2010-02-23, 2010-04-…
+$ horanasc            &lt;chr&gt; "1155", "0948", "1123", "0700", "0505", "0840…
+$ sexo                &lt;chr&gt; "Masculino", "Masculino", "Masculino", "Femin…
+$ apgar1              &lt;dbl&gt; 9, 8, 8, 9, 9, 7, 7, 8, 8, 8, 8, 8, 8, 8, 10,…
+$ apgar5              &lt;dbl&gt; 10, 9, 9, 10, 10, 9, 10, 10, 9, 10, 9, 9, 9, …
+$ racacor             &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ peso                &lt;dbl&gt; 3400, 3950, 3550, 3000, 3000, 3900, 3250, 350…
+$ idanomal            &lt;chr&gt; "Não", "Não", "Não", "Não", "Não", "Não", "Nã…
+$ dtcadastro          &lt;date&gt; 2010-06-10, 2010-07-01, 2010-03-15, 2010-05-…
+$ codanomal           &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ numerolote          &lt;chr&gt; "20100005", "20100007", "20100003", "20100002…
+$ versaosist          &lt;chr&gt; "2.2.08", "2.2.08", "2.2.07", "2.2.08", "2.2.…
+$ dtrecebim           &lt;date&gt; 2010-06-17, 2010-07-06, 2010-04-16, 2010-05-…
+$ difdata             &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ dtrecorig           &lt;chr&gt; "2010-06-17", "2010-07-06", "2010-04-16", "20…
+$ naturalmae          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ codmunnatu          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ seriescmae          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ dtnascmae           &lt;date&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+$ racacormae          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ qtdgestant          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ qtdpartnor          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ qtdpartces          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ idadepai            &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ dtultmenst          &lt;date&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+$ semagestac          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ tpmetestim          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ consprenat          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ mesprenat           &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ tpapresent          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ sttrabpart          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ stcesparto          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ tprobson            &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ stdnepidem          &lt;chr&gt; "sim", "sim", "sim", "sim", "sim", "sim", "si…
+$ stdnnova            &lt;chr&gt; "sim", "sim", "sim", "sim", "sim", "sim", "si…
+$ racacor_rn          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ racacorn            &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ escmae2010          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ codmuncart          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ codufnatu           &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ tpnascassi          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ escmaeagr1          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ dtrecoriga          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ tpfuncresp          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ tpdocresp           &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ dtdeclarac          &lt;date&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+$ paridade            &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ kotelchuck          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ contador_2          &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+$ codocupmae          &lt;chr&gt; NA, NA, NA, NA, "Trabalhador da cultura de ar…
+$ mun_res_status      &lt;chr&gt; "ATIVO", "ATIVO", "ATIVO", "ATIVO", "ATIVO", …
+$ mun_res_tipo        &lt;chr&gt; "MUNIC", "MUNIC", "MUNIC", "MUNIC", "MUNIC", …
+$ mun_res_nome        &lt;chr&gt; "Rio Branco", "Rio Branco", "Rio Branco", "Ac…
+$ mun_res_uf          &lt;chr&gt; "Acre", "Acre", "Acre", "Acre", "Acre", "Acre…
+$ mun_res_lat         &lt;dbl&gt; -9.97830, -9.97830, -9.97830, -10.07379, -10.…
+$ mun_res_lon         &lt;dbl&gt; -67.81053, -67.81053, -67.81053, -67.05232, -…
+$ mun_res_alt         &lt;dbl&gt; 138, 138, 138, 206, 206, 206, 206, 206, 206, …
+$ mun_res_area        &lt;dbl&gt; 8835.541, 8835.541, 8835.541, 1807.957, 1807.…
+$ anomal_categ        &lt;chr&gt; "sem_anomalia", "sem_anomalia", "sem_anomalia…
+$ anomal_prioritarias &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p>NOTE: As it is possible to see with glimpse(), the original factor variables in the dataframe where automatically converted into character when the data is pulled from the postgreSQL database.</p>
+</blockquote>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

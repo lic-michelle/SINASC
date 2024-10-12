@@ -3,11 +3,12 @@ project:
   output-dir: docs
 
 website:
-  title: "Analysis of Genetic Anomalies found on SINASC database"
   navbar:
     left:
       - href: SINASC.qmd
         text: Home
+      - href: fatores.qmd
+        text: Descriptive Analysis
 
 format:
   html:

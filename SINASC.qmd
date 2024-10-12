@@ -25,12 +25,25 @@ library(tidyverse)
 library(janitor)
 library(cid10)
 
+#statistics
+library(rstatix)
+
 #data viz
+library(ggpubr)
 library(ggplot2)
-library(patchwork)
-library(DT)
-library(htmltools)
+library(sf)
+library(geobr)
+library(ggspatial)
+
 ```
+
+::: callout-warning
+For linux users, it is better to install the sf package through by typing:
+
+```         
+sudo apt install r-cran-sf
+```
+:::
 
 ## Downloading data from dataSUS
 
@@ -51,15 +64,6 @@ sinasc = fetch_datasus(year_start = 2010,
 save(sinasc, file = "nao_upar/sinasc.RData")
 ```
 
-```{r, warning=FALSE, message=FALSE}
-#| echo: false
-
-
-#load object already dowloaded
-load("nao_upar/sinasc.RData")
-
-```
-
 > NOTE: A characteristic of SINASC is that the dataset is released yearly and, as now, the data from 2023 is preliminary.
 
 ## Data manipulation
@@ -67,6 +71,8 @@ load("nao_upar/sinasc.RData")
 A few data cleaning, and transformation will be necessary to make the dataset more organized and accurate.
 
 ```{r}
+#| eval: false
+
 
 #use the function process_sinac and clean names with janitor
 sinasc = process_sinasc(sinasc) |> 
@@ -93,6 +99,7 @@ sinasc1 = sinasc1 |>
   mutate(sexo = as.factor(sexo)) |> 
   mutate(across(apgar1:apgar5, ~ as.numeric(.x))) |> 
   mutate(peso = as.numeric(peso)) |> 
+  mutate(idanomal = if_else(is.na(codanomal) == TRUE, "não", "sim")) |>
   mutate(idanomal = as.factor(idanomal)) |> 
   mutate(dtcadastro = as.Date(dtcadastro, tryFormats = "%Y-%m-%d")) |>
   mutate(dtrecebim = as.Date(dtrecebim, tryFormats = "%Y-%m-%d")) |>
@@ -165,6 +172,7 @@ sinasc1 = sinasc1 |>
 When making an internal data validation, we have detected that some values in the 'dtultmenst' variable are not in the format YYYY-MM-DD. Instead it is in the format YY-MM-DD. Therefore, we needed to fix this formating error prior to send the dataset to a postgreSQL database.
 
 ```{r, warning=FALSE, message=FALSE}
+#| eval: false
 
 sinasc = sinasc |> 
   mutate(dtultmenst = if_else(nchar(as.character(dtultmenst)) == 8, 
@@ -176,6 +184,7 @@ sinasc = sinasc |>
 The same happened for the 'dtnascmae' variable, however with three different types of formatting error.
 
 ```{r, warning=FALSE, message=FALSE}
+#| eval: false
 
 sinasc = sinasc |>
   mutate(dtnascmae = if_else(nchar(as.character(dtnascmae)) == 7, 
@@ -195,7 +204,7 @@ sinasc = sinasc |>
 Next, we will create a category for when the child has only one anomaly or multiple anomalies and another category with prirority anomalies based on the CID-10 nomenclature.
 
 ```{r, warning=FALSE, message=FALSE}
-
+#| eval: false
 
 anomalias_prioritarias = list(defeitos_tubo_neural = c("Q000", "Q001", "Q002", "Q010", "Q050"),
                              microcefalia = c("Q020"),
@@ -229,6 +238,8 @@ sinasc = sinasc |>
 
 ```
 
+> NOTE: In cases of newborns with multiple anomalies that fall into the same priority groups, the case is considered as one record, instead of two records.
+
 ## Load the dataframe into a PostgreSQL database
 
 In order to make the dataset more accessible, we will finish the ETL process by loading the transformed object into a postgresql database, so anyone with access to it can make direct queries or use it with other pipelines downstream.
@@ -246,10 +257,15 @@ readRenviron(".env")
 
 con = dbConnect(drv = RPostgres::Postgres(),
                 dbname="data_sus",
-                host = Sys.getenv("HOST_ADRESS"),
+                host = Sys.getenv("HOST_ADDRESS"),
                 port = 5432,
                 user = Sys.getenv("USER"),
                 password = Sys.getenv("PASSWORD"))
+
+```
+
+```{r}
+#| eval: false
 
 #write the datafame as a SQL table
 dbWriteTable(conn = con,
@@ -277,5 +293,3 @@ glimpse(result, width = 75)
 ```
 
 > NOTE: As it is possible to see with glimpse(), the original factor variables in the dataframe where automatically converted into character when the data is pulled from the postgreSQL database.
-
-## Descriptive Analysis

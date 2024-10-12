@@ -1,0 +1,866 @@
+---
+title: "Descriptive Analysis"
+author: "BioHub Solutions"
+date: 03/09/2024
+date-format: DD/MM/YYYY
+format: html
+editor: visual
+code-fold: true
+---
+
+```{r, warning=FALSE, message=FALSE}
+#| echo: false
+
+#ETL
+library(read.dbc)
+library(microdatasus)
+library(DBI)
+library(RPostgres)
+
+#data manipulation
+library(tidyverse)
+library(janitor)
+library(cid10)
+
+#statistics
+library(rstatix)
+
+#data viz
+library(ggpubr)
+library(ggplot2)
+library(geobr)
+library(ggspatial)
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+#| echo: false
+
+#load object already dowloaded
+load("nao_upar/sinasc_editado.RData")
+```
+
+## Modifying the CBO dataframe
+
+```{r}
+
+cbo = tabCBO %>% 
+  mutate(cbo_grande_grupo = substr(cod, start = 1, stop = 1)) %>%
+  mutate(cbo_subgrupo_principal = substr(cod, start = 1, stop = 2)) %>% 
+  relocate(cbo_grande_grupo, .before = cod) %>% 
+  relocate(cbo_subgrupo_principal, .before = cod) %>%
+  mutate(cbo_grande_grupo_desc = case_when(cbo_grande_grupo == "0" ~ "Forças armadas,policiais e bombeiros militares",
+                                           cbo_grande_grupo == "1" ~ "Membros superiores do poder público, dirigentes de org. de empresas e gerentes",
+                                           cbo_grande_grupo == "2" ~ "Profissionais das ciências e das artes",
+                                           cbo_grande_grupo == "3" ~ "Técnicos do nível médio",
+                                           cbo_grande_grupo == "4" ~ "Trab. de serviços administrativos",
+                                           cbo_grande_grupo == "5" ~ "Trab. dos servuços, vendedores do comércio em lojas e mercados",
+                                           cbo_grande_grupo == "6" ~ "Trab. agropecuários,florestais, da caça e pesca",
+                                           cbo_grande_grupo == "7" ~ "Trab. da produção de bens e serviços industrias 1",
+                                           cbo_grande_grupo == "8" ~ "Trab. da produção de bens e serviços industriais 2",
+                                           cbo_grande_grupo == "9" ~ "Trab. de manutenção e reparo"
+))  %>%
+  group_by(cbo_grande_grupo) %>%
+  mutate(cbo_subgrupo_desc = case_when(cbo_subgrupo_principal == "01" ~ "MEMBROS DAS FORÇAS ARMADAS",
+                                            cbo_subgrupo_principal == "02" ~ "POLICIAIS MILITARES",
+                                            cbo_subgrupo_principal == "03" ~ "BOMBEIROS MILITARES",
+                                            cbo_subgrupo_principal == "11" ~ "MEMBROS SUPERIORES E DIRIGENTES DO PODER PÚBLICO",
+                                            cbo_subgrupo_principal == "12" ~ "DIRIGENTES DE EMPRESAS E ORGANIZAÇÕES (EXCETO DE INTERESSE PÚBLICO)",
+                                            cbo_subgrupo_principal == "13" ~ "DIRETORES E GERENTES EM EMPRESA DE SERVIÇOS DE SAÚDE, DA EDUCAÇÃO, OU DE SERVIÇOS CULTURAIS, SOCIAIS OU PESSOAIS",
+                                            cbo_subgrupo_principal == "14" ~ "GERENTES",
+                                            cbo_subgrupo_principal == "20" ~ "PESQUISADORES E PROFISSIONAIS POLICIENTÍFICOS",
+                                            cbo_subgrupo_principal == "21" ~ "PROFISSIONAIS DAS CIÊNCIAS EXATAS,FÍSICAS E DA ENGENHARIA",
+                                            cbo_subgrupo_principal == "22" ~ "PROFISSIONAIS DAS CIÊNCIAS BIOLÓGICAS,DA SAÚDE E AFINS",
+                                            cbo_subgrupo_principal == "23" ~ "PROFISSIONAIS DO ENSINO",
+                                            cbo_subgrupo_principal == "24" ~ "PROFISSIONAIS DAS CIÊNCIAS JURÍDICAS",
+                                            cbo_subgrupo_principal == "25" ~ "PROFISSIONAIS DAS CIÊNCIAS SOCIAIS E HUMANAS",
+                                            cbo_subgrupo_principal == "26" ~ "COMUNICADORES, ARTISTAS E RELIGIOSOS",
+                                            cbo_subgrupo_principal == "27" ~ "PROFISSIONAIS EM GASTRONOMIA",
+                                            cbo_subgrupo_principal == "30" ~ "TÉCNICOS POLIVALENTES",
+                                            cbo_subgrupo_principal == "31" ~ "TÉCNICOS DE NÍVEL MÉDIO DAS CIÊNCIAS FÍSICAS,QUÍMICAS, ENGENHARIA E AFINS",
+                                            cbo_subgrupo_principal == "32" ~ "TÉCNICOS DE NÍVEL MÉDIO DAS CIÊNCIAS BIOLÓGICAS, BIOQUÍMICAS, DA SAÚDE E AFINS",
+                                            cbo_subgrupo_principal == "33" ~ "PROFESSORES LEIGOS E DE NÍVEL MÉDIO",
+                                            cbo_subgrupo_principal == "34" ~ "TÉCNICOS DE NÍVEL MÉDIO EM SERVIÇOS DE TRANSPORTES",
+                                            cbo_subgrupo_principal == "35" ~ "TÉCNICOS DE NIVEL MÉDIO NAS CIÊNCIAS ADMINISTRATIVAS", 
+                                            cbo_subgrupo_principal == "36" ~ "TÉCNICOS EM NIVEL MÉDIO DOS SERVIÇOS CULTURAIS, DAS COMUNICAÇÕES E DOS DESPORTOS",
+                                            cbo_subgrupo_principal == "37" ~ "TÉCNICOS EM NIVEL MÉDIO DOS SERVIÇOS CULTURAIS, DAS COMUNICAÇÕES E DOS DESPORTOS",
+                                            cbo_subgrupo_principal == "39" ~ "OUTROS TÉCNICOS DE NÍVEL MÉDIO",
+                                            cbo_subgrupo_principal == "41" ~ "ESCRITURÁRIOS",
+                                            cbo_subgrupo_principal == "42" ~ "TRABALHADORES DE ATENDIMENTO AO PÚBLICO",
+                                            cbo_subgrupo_principal == "51" ~ "TRABALHADORES DOS SERVIÇOS",
+                                            cbo_subgrupo_principal == "52" ~ "VENDEDORES E PRESTADORES DE SERVIÇOS DO COMÉRCIO", 
+                                            cbo_subgrupo_principal == "61" ~ "PRODUTORES NA EXPLORAÇÃO AGROPECUÁRIA", 
+                                            cbo_subgrupo_principal == "62" ~ "TRABALHADORES NA EXPLORAÇÃO AGROPECUÁRIA",
+                                            cbo_subgrupo_principal == "63" ~ "PESCADORES E EXTRATIVISTAS FLORESTAIS", 
+                                            cbo_subgrupo_principal == "64" ~ "TRABALHADORES DA MECANIZAÇÃO AGROPECUÁRIA E FLORESTAL", 
+                                            cbo_subgrupo_principal == "71" ~ "TRABALHADORES DA INDÚSTRIA EXTRATIVA E DA CONSTRUÇÃO CIVIL", 
+                                            cbo_subgrupo_principal == "72" ~ "TRABALHADORES DA TRANSFORMAÇÃO DE METAIS E DE COMPÓSITOS", 
+                                            cbo_subgrupo_principal == "73" ~ "TRABALHADORES DA FABRICAÇÃO E INSTALAÇÃO ELETROELETRÔNICA",
+                                            cbo_subgrupo_principal == "74" ~ "MONTADORES DE APARELHOS E INSTRUMENTOS DE PRECISÃO E MUSICAIS", 
+                                            cbo_subgrupo_principal == "75" ~ "JOALHEIROS, VIDREIROS, CERAMISTAS E AFINS",
+                                            cbo_subgrupo_principal == "76" ~ "TRABALHADORES NAS INDÚSTRIAS TÊXTIL, DO CURTIMENTO, DO VESTÚARIO E DAS ARTES GRÁFICAS",
+                                            cbo_subgrupo_principal == "77" ~ "TRABALHADORES DAS INDÚSTRIAS DE MADEIRA E DO MOBILIÁRIO", 
+                                            cbo_subgrupo_principal == "78" ~ "TRABALHADORES DE FUNÇÕES TRANSVERSAIS", 
+                                            cbo_subgrupo_principal == "79" ~ "TRABALHADORES DO ARTESANATO",
+                                            cbo_subgrupo_principal == "81" ~ "TRABALHADORES EM INDÚSTRIAS DE PROCESSOS CONTÍNUOS E OUTRAS INDÚSTRIAS",
+                                            cbo_subgrupo_principal == "82" ~ "TRABALHADORES DE INSTALAÇÕES SIDERÚRGICAS  E DE MATERIAIS DE CONSTRUÇÃO",
+                                            cbo_subgrupo_principal == "83" ~ "TRABALHADORES DE INSTALAÇÕES E MÁQUINAS DE FABRICAÇÃO DE CELULOSE E PAPEL", 
+                                            cbo_subgrupo_principal == "84" ~ "TRABALHADORES DA FABRICAÇÃO DE ALIMENTOS, BEBIDAS E FUMO",
+                                            cbo_subgrupo_principal == "86" ~ "OPERADORES DE PRODUÇÃO, CAPTAÇÃO,TRATAMENTO E DISTRIBUIÇÃO (ENERGIA, ÁGUA E UTILIDADES)",
+                                            cbo_subgrupo_principal == "91" ~ "TRABALHADORES EM SERVIÇOS DE REPARAÇÃO E MANUTENÇÃO MECÂNICA",
+                                            cbo_subgrupo_principal == "95" ~ "POLIMANTENEDORES",
+                                            cbo_subgrupo_principal == "99" ~ "OUTROS TRABALHADORES DA CONSERVAÇÃO,MANUTENÇÃO E REPARAÇÃO",
+ )) 
+
+```
+
+## Plots
+
+```{r, warning=FALSE, message=FALSE}
+
+#total de anomalias por ano, segundo o tipo de anomalia
+figure1 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, anomal_categ) %>% 
+  count() %>% 
+  filter(anomal_categ != "sem_anomalia") %>% 
+  bind_rows(., sinasc %>% 
+              mutate(ano_nasc = year(dtnasc)) %>% 
+              group_by(ano_nasc, idanomal) %>% 
+              count() %>% 
+              filter(idanomal == "Sim") %>% 
+              rename(anomal_categ = idanomal) %>% 
+              mutate(anomal_categ = gsub("Sim", "anomalias congênitas", anomal_categ))) %>% 
+  ggline(data = .,
+         x = "ano_nasc",
+         y = "n",
+         color = "anomal_categ",
+         legend_title=NULL,
+         xlab = "Ano de nascimento", 
+         ylab = "Número de casos") +
+  scale_y_continuous(breaks = seq(from = 0, 
+                                  to = 30000,
+                                  by = 5000))+
+  labs(color = NULL)
+
+
+figure1
+
+
+```
+
+```{r, warning=FALSE,message=FALSE}
+
+figure2 = sinasc %>% 
+  drop_na(anomal_prioritarias) %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(anomal_prioritarias = if_else(anomal_prioritarias != "outras_anomalias", 
+                                       "Anomalias prioritárias", 
+                                       "Outras anomalias")) %>% 
+  group_by(ano_nasc, anomal_prioritarias) %>% 
+  count() %>% 
+  ggbarplot(data = .,
+            x = "ano_nasc",
+            y = "n",
+            color = "anomal_prioritarias",
+            fill = "anomal_prioritarias",
+            position = position_dodge(),
+            label = TRUE,
+            lab.size = 2.5,
+            xlab = "Ano de nascimento", 
+            ylab = "Número de casos") +
+  labs(fill = "", color = "")
+
+figure2
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+
+# figure3=sinasc %>% 
+#   drop_na(anomal_prioritarias) %>% 
+#   mutate(ano_nasc = year(dtnasc)) %>% 
+#   group_by(ano_nasc, anomal_prioritarias) %>% 
+#   count() %>% 
+#   filter(anomal_prioritarias != "outras_anomalias") %>% 
+#   ggbarplot(data = .,
+#             x = "ano_nasc",
+#             y = "n",
+#             label = TRUE,
+#             lab.size = 2.5,
+#             ggtheme = "minimal",
+#             xlab = "Ano de nascimento", 
+#             ylab = "Número de casos",
+#             facet.by = "anomal_prioritarias") +
+#   labs(fill = "", color = "")
+# 
+# figure3
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+
+figure4 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, mun_res_uf, idanomal) %>% 
+  count() %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim/(sim+não))*10e5) %>% 
+  drop_na(mun_res_uf) %>% 
+  select(mun_res_uf, ano_nasc, incidencia) %>%
+  pivot_wider(names_from = ano_nasc,
+              values_from = incidencia) %>% 
+  column_to_rownames("mun_res_uf") %>% 
+  ggballoonplot(data, color = "#0073C2FF", fill = "#0073C2FF")
+
+figure4
+```
+
+```{r, warning=FALSE, message=FALSE}
+
+figure5 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, mun_res_uf, idanomal) %>% 
+  count() %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim/(sim+não))*10e5) %>% 
+  drop_na(mun_res_uf) %>% 
+  # select(mun_res_uf, ano_nasc, incidencia) %>%
+  # pivot_wider(names_from = ano_nasc,
+  #             values_from = incidencia) %>% 
+  # column_to_rownames("mun_res_uf") %>% 
+  mutate(regiao = case_when(
+    mun_res_uf %in% c("Amazonas","Roraima","Amapá","Pará",
+                      "Tocantins","Rondônia","Acre") ~ "Norte",
+    mun_res_uf %in% c ("Maranhão","Piauí","Ceará",
+                       "Rio Grande do Norte","Pernambuco","Paraíba","Sergipe",
+                       "Alagoas","Bahia" ) ~ "Nordeste",
+    mun_res_uf %in% c ("Mato Grosso","Mato Grosso do Sul","Goiás", "Distrito Federal") ~ "Centro-Oeste",
+    mun_res_uf %in% c ("São Paulo","Rio de Janeiro","Espírito Santo","Minas Gerais") ~ "Sudeste",
+    mun_res_uf %in% c ("Paraná" ,"Rio Grande do Sul","Santa Catarina") ~ "Sul"
+  )) %>% 
+  ggline(data = .,
+         x = "ano_nasc",
+         y = "incidencia",color = "mun_res_uf",
+         facet.by = "regiao",
+         ggtheme = theme_minimal(base_size = 8), 
+         legend_title=NULL,
+         xlab = "Ano de nascimento",
+         ylab = "Número de casos",palette = ) +
+        
+  # scale_y_continuous(breaks = seq(from = 0, 
+  #                                 to = 30000,
+  #                                 by = 5000))+
+  rotate_x_text()
+
+figure5
+
+```
+
+```{r}
+figure3=sinasc %>% #SAVAR DE NOVO
+  drop_na(anomal_prioritarias) %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, anomal_prioritarias) %>% 
+  count() %>% 
+  filter(anomal_prioritarias != "outras_anomalias") %>% 
+  ggbarplot(data = .,
+            x = "ano_nasc",
+            y = "n",
+            label = TRUE,
+            lab.size = 2.5,
+            ggtheme = theme_minimal(),
+            xlab = "Ano de nascimento", 
+            ylab = "Número de casos",
+            facet.by = "anomal_prioritarias") +
+  rotate_x_text() +
+  labs(fill = "", color = "")
+
+figure3
+
+```
+
+```{r}
+#filename=anomalia_prioritaria_eoutras_incidencia
+nasc_sem_anomal_ano = sinasc %>% 
+  filter(idanomal == "não") %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc) %>% 
+  count() 
+
+figure4_1 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, anomal_prioritarias) %>% 
+  count() %>%
+  drop_na(anomal_prioritarias) %>% 
+  rename(cont_anomal = n) %>% 
+  left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc)) %>% 
+  mutate(incidencia = (cont_anomal/(cont_anomal + n))*1e5) %>% 
+  filter(anomal_prioritarias != "outras_anomalias") %>%
+  filter(!is.na(anomal_prioritarias)) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "anomal_prioritarias",
+         facet.by = "anomal_prioritarias",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure4_1
+
+```
+
+```{r}
+#filename=anomalia_priotaria_incidencia
+figure4_2 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, anomal_prioritarias) %>% 
+  count() %>%
+  drop_na(anomal_prioritarias) %>% 
+  rename(cont_anomal = n) %>% 
+  left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc)) %>% 
+  mutate(incidencia = (cont_anomal/(cont_anomal + n))*1e5) %>% 
+  filter(!is.na(anomal_prioritarias) & anomal_prioritarias != "outras_anomalias") %>%  
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "anomal_prioritarias",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure4_2
+```
+
+```         
+```
+
+```{r}
+figure4 = sinasc %>%  #salvar de novo
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, mun_res_uf, idanomal) %>% 
+  count() %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>% 
+  drop_na(mun_res_uf) %>% 
+  select(mun_res_uf, ano_nasc, incidencia) %>%
+  pivot_wider(names_from = ano_nasc,
+              values_from = incidencia) %>% 
+  column_to_rownames("mun_res_uf") %>% 
+  ggballoonplot(data, 
+                color = "#0073C2FF", 
+                fill = "#0073C2FF", 
+                ggtheme = theme_minimal())
+
+figure4
+```
+
+```{r}
+#filename=incidencia_por_estado
+library(RColorBrewer)
+
+cores_estados <- brewer.pal(n = 27, name = "Paired")
+
+nomes_estados <- c(
+  "Amazonas", "Roraima", "Amapá", "Pará", "Tocantins", 
+  "Rondônia", "Acre", "Maranhão", "Piauí", "Ceará", 
+  "Rio Grande do Norte", "Pernambuco", "Paraíba", 
+  "Sergipe", "Alagoas", "Bahia", "Mato Grosso", 
+  "Mato Grosso do Sul", "Goiás", "Distrito Federal", 
+  "São Paulo", "Rio de Janeiro", "Espírito Santo", 
+  "Minas Gerais", "Paraná", "Rio Grande do Sul", 
+  "Santa Catarina"
+)
+n_estados <- length(nomes_estados)
+cores_estados <- rep(cores_estados, length.out = n_estados)
+cores_estados <- setNames(cores_estados, nomes_estados)
+
+figure5_1 <- sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, mun_res_uf, idanomal) %>% 
+  count() %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim/(sim + não)) * 1e5) %>% 
+  drop_na(mun_res_uf) %>% 
+  mutate(regiao = case_when(
+    mun_res_uf %in% c("Amazonas","Roraima","Amapá","Pará",
+                      "Tocantins","Rondônia","Acre") ~ "Norte",
+    mun_res_uf %in% c("Maranhão","Piauí","Ceará",
+                      "Rio Grande do Norte","Pernambuco","Paraíba","Sergipe",
+                      "Alagoas","Bahia") ~ "Nordeste",
+    mun_res_uf %in% c("Mato Grosso","Mato Grosso do Sul","Goiás", "Distrito Federal") ~ "Centro-Oeste",
+    mun_res_uf %in% c("São Paulo","Rio de Janeiro","Espírito Santo","Minas Gerais") ~ "Sudeste",
+    mun_res_uf %in% c("Paraná" ,"Rio Grande do Sul","Santa Catarina") ~ "Sul"
+  )) %>% 
+  ggline(data = .,
+         x = "ano_nasc",
+         y = "incidencia",
+         color = "mun_res_uf",
+         facet.by = "regiao",
+         ggtheme = theme_minimal(base_size = 8), 
+         legend_title = NULL,
+         xlab = "Ano de nascimento",
+         ylab = "Incidência",
+         palette = cores_estados) + 
+  rotate_x_text()+
+  labs(color = NULL)
+
+figure5_1
+```
+
+```{r}
+#Idade
+#filename=incidencia_idade
+figure6 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(faixa_etaria_mae = case_when(idademae < 18 ~ "menor de 18",
+                                      idademae >= 18 & idademae < 35 ~ "de 18 a 34",
+                                      idademae >= 35 ~ "maior ou igual a 35",
+                                      is.na(idademae) == TRUE ~ "não informado")) %>%
+  mutate(faixa_etaria_mae = fct(faixa_etaria_mae, c("menor de 18", 
+                                                    "de 18 a 34", 
+                                                    "maior ou igual a 35", 
+                                                    "não informado"))) %>% 
+  group_by(ano_nasc, faixa_etaria_mae, idanomal) %>%
+  count() %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>% 
+  filter(faixa_etaria_mae != "não informado") %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "faixa_etaria_mae",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure6
+```
+
+```{r}
+#Ocupação
+#filename= incidencia_cbo_grande_grupo
+cbo2 = cbo %>%
+distinct(nome, .keep_all =  TRUE)
+
+figure7=sinasc %>%
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  left_join(., cbo2, join_by(codocupmae == nome)) %>% 
+  group_by(ano_nasc, idanomal, cbo_grande_grupo, cbo_grande_grupo_desc) %>%
+  count() %>% 
+  drop_na(cbo_grande_grupo_desc) %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         xlab = "Ano de nascimento",
+         ylab = "Incidência (casos/100 mil nascimentos)",
+         facet.by = "cbo_grande_grupo") +
+  rotate_x_text()
+
+figure7
+
+```
+
+```{r}
+
+cbo2 = cbo %>%
+  distinct(nome, .keep_all = TRUE)
+
+figure17 = sinasc %>%
+  mutate(ano_nasc = year(dtnasc)) %>%
+  left_join(cbo2, by = c("codocupmae" = "nome")) %>%
+  filter(cbo_grande_grupo == "6") %>% 
+  group_by(ano_nasc, idanomal, cbo_subgrupo_desc) %>%
+  count() %>%
+  pivot_wider(names_from = idanomal, values_from = n, values_fill = 0) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         xlab = "Ano de nascimento",
+         ylab = "Incidência (casos/100 mil nascimentos)",
+         facet.by = "cbo_subgrupo_desc",
+         ggtheme = theme_minimal(base_size = 8)) +
+  rotate_x_text()
+
+figure17
+
+```
+
+```{r}
+
+#Escolaridade
+figure8 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(escmaeagr1 = case_when(
+    is.na(escmae) ~ "não informado",
+    escmae %in% c("Nenhum", "nenhum", "Nenhuma") ~ "Nenhum",
+    escmae %in% c("1 a 3 anos") ~ "1 a 3 anos",
+    escmae %in% c("4 a 7 anos") ~ "4 a 7 anos",
+    escmae %in% c("8 a 11 anos") ~ "8 a 11 anos",
+    escmae %in% c("Ignorado") ~ "Ignorado"
+  )) %>% 
+  mutate(escmaeagr_1 = fct_relevel(escmaeagr1, 
+                                    c("Nenhum", 
+                                      "1 a 3 anos", 
+                                      "4 a 7 anos", 
+                                      "8 a 11 anos", 
+                                      "Ignorado"))) %>% 
+  group_by(ano_nasc, escmaeagr_1, idanomal) %>%
+  count() %>% 
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  filter(escmaeagr_1 != "não informado") %>%  # Filtra para remover "não informado"
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "escmaeagr_1",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure8
+```
+
+```{r}
+# #Raça/cor da mãe
+# figure = sinasc %>% 
+#   mutate(ano_nasc = year(dtnasc)) %>% 
+#   mutate(racacor_mae = case_when(racacormae == 1 ~ "Branca",
+#                                  racacormae == 2 ~ "Preta",
+#                                  racacormae == 3 ~ "Amarela",
+#                                  racacormae == 4 ~ "Parda",
+#                                  racacormae == 5 ~ "Indígena",
+#                                  racacormae == 6 ~ "Indeterminado",
+#                                  is.na(racacormae) ~ "Não informado")) %>% 
+#   group_by(ano_nasc, racacor_mae, idanomal) %>%
+#   count() %>% 
+#   View()
+#   pivot_wider(names_from = idanomal,
+#               values_from = n) %>% 
+#   mutate(incidencia = (sim/(sim+não))*1e5) %>% 
+#    filter(racacor_mae != "?" & racacor_mae != "Não informado") %>% 
+#   ggline(x = "ano_nasc",
+#          y = "incidencia",
+#          color = "racacor_mae",
+#          xlab = "Ano de nascimento", 
+#          ylab = "Incidência (casos/100 mil nascimentos)") +
+#   rotate_x_text() +
+#   labs(color = NULL)
+
+```
+
+```{r}
+
+#Aborto
+figure9 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>%
+  mutate(qtd_filmort = case_when(
+    is.na(qtdfilmort) ~ "Ignorado",
+    qtdfilmort == 0 ~ "Nenhum",
+    qtdfilmort == 1 ~ "1",
+    qtdfilmort >= 2 ~ "≥2" 
+  )) %>% 
+  mutate(qtd_filmort = fct_relevel(qtd_filmort, c("Ignorado",
+                                                  "Nenhum",
+                                                  "1",
+                                                  "≥2"))) %>% 
+  group_by(ano_nasc, qtd_filmort, idanomal) %>%
+  count() %>% 
+  filter(qtd_filmort != "Ignorado") %>%  
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "qtd_filmort",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure9
+```
+
+```{r}
+#Número de consultas pré-natal
+figure10= sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, consultas, idanomal) %>%
+  count() %>% 
+  filter(!is.na(consultas)) %>%  
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "consultas",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure10
+```
+
+```{r}
+#Semanas de gestação
+
+figure11 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(gestacao_agrupado = case_when(
+    gestacao %in% c("Menos de 22 semanas", "22 a 27 semanas", "28 a 31 semanas") ~ "Menor que 37 semanas",
+    gestacao %in% c("37 a 41 semanas") ~ "37 a 41 semanas",
+    gestacao %in% c("42 semanas ou mais") ~ "42 semanas ou mais",
+    is.na(gestacao) ~ "não informado"
+  )) %>%
+  mutate(gestacao_agrupado = fct_relevel(gestacao_agrupado, 
+                                          c("Menor que 37 semanas", 
+                                            "37 a 41 semanas", 
+                                            "42 semanas ou mais", 
+                                            "não informado"))) %>% 
+  group_by(ano_nasc, gestacao_agrupado, idanomal) %>%
+  count() %>% 
+  filter(gestacao_agrupado != "não informado") %>%  
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "gestacao_agrupado",  
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure11
+```
+
+```{r}
+#Tipo de gravidez
+figure12= sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(gestacao_tipo = case_when(  
+    gravidez %in% c("única") ~ "Única",
+    gravidez %in% c("Dupla") ~ "Dupla",
+    gravidez %in% c("Tripla e mais") ~ "Tripla e mais",
+    TRUE ~ NA_character_ 
+  )) %>% 
+  mutate(gestacao_tipo = fct(gestacao_tipo, c("Única", "Dupla", "Tripla e mais"))) %>% 
+  group_by(ano_nasc, gestacao_tipo, idanomal) %>%
+  count() %>% 
+  filter(!is.na(gestacao_tipo)) %>% 
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "gestacao_tipo", 
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure12
+```
+
+```{r}
+#Tipo de parto
+figure13 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  group_by(ano_nasc, parto, idanomal) %>%
+  count() %>% 
+  filter(!is.na(parto)) %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "parto",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure13
+```
+
+```{r}
+#Sexo do recém-nascido
+figure14 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(sexo_bb = case_when(
+    sexo %in% c("Feminino") ~ "Feminino",
+    sexo %in% c("Masculino") ~ "Masculino",
+    is.na(sexo) ~ "não informado")) %>%
+  group_by(ano_nasc, sexo_bb, idanomal) %>%
+  count() %>% 
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  filter(sexo_bb != "não informado") %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "sexo_bb",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure14
+```
+
+```{r}
+#Apgar 5º minuto
+
+figure15 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(apgar_5 = case_when(
+    apgar5 < 7 ~ "menor que 7",
+    apgar5 >= 7 ~ "maior ou igual a 7",
+    is.na(apgar5) ~ "não informado"
+  )) %>% 
+  mutate(apgar_5 = fct_relevel(apgar_5, c("menor que 7", "maior ou igual a 7", "não informado"))) %>% 
+  group_by(ano_nasc, apgar_5, idanomal) %>%
+  count() %>% 
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  filter(apgar_5 != "não informado") %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "apgar_5",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure15
+```
+
+```{r}
+# #Raça/cor do recém-nascido
+# sinasc %>%
+#   mutate(ano_nasc = year(dtnasc)) %>% 
+#   mutate(racacor_nascido = case_when(
+#     racacor_rn == 1 | racacorn == 1 ~ "Branca",
+#     racacor_rn == 2 | racacorn == 2 ~ "Preta",
+#     racacor_rn == 3 | racacorn == 3 ~ "Amarela",
+#     racacor_rn == 4 | racacorn == 4 ~ "Parda",
+#     racacor_rn == 5 | racacorn == 5 ~ "Indígena",  
+#     is.na(racacor_rn) & is.na(racacorn) ~ "não informado"
+#   )) %>% 
+#   group_by(ano_nasc, racacor_nascido, idanomal) %>%
+#   count() %>% 
+#   pivot_wider(names_from = idanomal,
+#               values_from = n) %>%
+#   mutate(incidencia = (sim/(sim+não))*1e5) %>%
+#   filter(racacor_nascido != "não informado") %>%
+#   ggline(x = "ano_nasc",
+#          y = "incidencia",
+#          color = "racacor_nascido",
+#          xlab = "Ano de nascimento",
+#          ylab = "Incidência (casos/100 mil nascimentos)") +
+#   rotate_x_text() +
+#   labs(color = NULL)
+
+```
+
+```{r}
+#Peso ao nascer (em g)
+
+figure16 = sinasc %>% 
+  mutate(ano_nasc = year(dtnasc)) %>% 
+  mutate(peso_rn = case_when(
+    peso < 2500 ~ "menor que 2500",
+    peso >= 2500 ~ "maior ou igual a 2500",
+    is.na(peso) ~ "não informado"
+  )) %>%
+  mutate(peso_rn = fct_relevel(peso_rn, c("menor que 2500", "maior ou igual a 2500", "não informado"))) %>% 
+  group_by(ano_nasc, peso_rn, idanomal) %>%
+  count() %>% 
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>%
+  filter(peso_rn != "não informado") %>% 
+  ggline(x = "ano_nasc",
+         y = "incidencia",
+         color = "peso_rn",
+         xlab = "Ano de nascimento", 
+         ylab = "Incidência (casos/100 mil nascimentos)") +
+  rotate_x_text() +
+  labs(color = NULL)
+
+figure16
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+ggsave(figure4,filename ="figure4.png",  # Nome do arquivo          
+        units = "px",
+        dpi=600,
+        height = 3240,
+        width = 3840
+)
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+for (i in 3:5) {
+  # Crie o nome do objeto
+  figure_name <- paste0("figure", i)
+  
+  # Salve a figura usando ggsave
+  ggsave(filename = paste0(figure_name, ".png"),  # Nome do arquivo
+         plot = get(figure_name),                  # Objeto gráfico
+         units = "px",
+         dpi=2400,
+         height = 8640,
+         width = 15200
+)
+}
+
+
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+for (i in 6:16) {
+  # Crie o nome do objeto
+  figure_name <- paste0("figure", i)
+  
+  # Salve a figura usando ggsave
+  ggsave(filename = paste0(figure_name, ".png"),  # Nome do arquivo
+         plot = get(figure_name),                  # Objeto gráfico
+         units = "px",
+         dpi=600,
+         height = 2160,
+         width = 3840
+)
+}
+
+
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+
+ggsave(figure7_1,
+       filename = "figure7_1.png",            
+       units = "px",
+       dpi = 600,
+       height = 539,
+       width = 1196) 
+```
