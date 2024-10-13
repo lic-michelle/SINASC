@@ -33,6 +33,12 @@ library(ggspatial)
 
 ```
 
+::: callout-tip
+To facilitate the SQL queries, it is recommended to install and enable the crosstable extension on the postgreSQL database with the command:
+
+CREATE EXTENSION IF NOT EXISTS tablefunc;
+:::
+
 ```{r, warning=FALSE, message=FALSE}
 #| echo: false
 
