@@ -396,33 +396,83 @@ figure3
 ```
 
 ```{r}
-#filename=anomalia_prioritaria_eoutras_incidencia
-nasc_sem_anomal_ano = sinasc %>% 
-  filter(idanomal == "não") %>% 
-  mutate(ano_nasc = year(dtnasc)) %>% 
-  group_by(ano_nasc) %>% 
-  count() 
+#query count of genetic anomalies
+query_nasc_sem_anomal_ano = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+COUNT(*) AS n
+FROM 
+  sinasc
+WHERE idanomal = 'não'
+AND mun_res_uf IS NOT null
+GROUP BY 
+  ano_nasc, mun_res_uf
+")
 
-figure4_1 = sinasc %>% 
-  mutate(ano_nasc = year(dtnasc)) %>% 
-  group_by(ano_nasc, anomal_prioritarias) %>% 
-  count() %>%
-  drop_na(anomal_prioritarias) %>% 
-  rename(cont_anomal = n) %>% 
-  left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc)) %>% 
+#query count of genetic anomalies
+
+query4_1= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+#create dataframe with the response
+df4_1 = dbGetQuery(con, query4_1)
+#create dataframe with the response
+nasc_sem_anomal_ano = dbGetQuery(con, query_nasc_sem_anomal_ano)
+
+
+figure4_1= df4_1 %>% 
+  complete(ano_nasc,mun_res_uf,anomal_prioritarias) %>% 
+  mutate(cont_anomal=replace_na(cont_anomal,0)) %>% 
+  left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc, 
+                                          mun_res_uf==mun_res_uf)) %>% 
   mutate(incidencia = (cont_anomal/(cont_anomal + n))*1e5) %>% 
-  filter(anomal_prioritarias != "outras_anomalias") %>%
-  filter(!is.na(anomal_prioritarias)) %>% 
-  ggline(x = "ano_nasc",
-         y = "incidencia",
-         color = "anomal_prioritarias",
-         facet.by = "anomal_prioritarias",
-         xlab = "Ano de nascimento", 
-         ylab = "Incidência (casos/100 mil nascimentos)") +
-  rotate_x_text() +
-  labs(color = NULL)
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>% 
+  left_join(., br_states[,c(3,5,6)], join_by(mun_res_uf == name_state)) %>% 
+  # mutate(incidencia=replace_na(incidencia,0)) %>% 
+  filter(ano_nasc == 2015) %>% 
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0, 20, 40, 60, 80, Inf), 
+                                labels = c("< 20", "20-40", "40-60", "60-80", "> 80"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias prioritárias no Brasil",
+       subtitle = "dados por estado em 2015",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal() +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ anomal_prioritarias)
 
 figure4_1
+ 
 
 ```
 
