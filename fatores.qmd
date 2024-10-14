@@ -8,6 +8,8 @@ editor: visual
 code-fold: true
 ---
 
+## Descriptive analysis
+
 ```{r, warning=FALSE, message=FALSE}
 #| echo: false
 
@@ -43,10 +45,27 @@ CREATE EXTENSION IF NOT EXISTS tablefunc;
 #| echo: false
 
 #load object already dowloaded
-load("nao_upar/sinasc_editado.RData")
+#load("nao_upar/sinasc_editado.RData")
 ```
 
-## Modifying the CBO dataframe
+```{r}
+#| echo: false
+
+#read the environment variables with the credentials
+readRenviron(".env")
+
+con = dbConnect(drv = RPostgres::Postgres(),
+                dbname="data_sus",
+                host = Sys.getenv("HOST_ADDRESS"),
+                port = 5432,
+                user = Sys.getenv("USER"),
+                password = Sys.getenv("PASSWORD"))
+
+```
+
+### Generating supporting files
+
+#### occupancy classification
 
 ```{r}
 
@@ -120,7 +139,19 @@ cbo = tabCBO %>%
 
 ```
 
-## Plots
+#### Brazilian maps
+
+```{r, warning=FALSE, message=FALSE}
+
+#download coordinates of the states
+#Data at scale 1:250,000, using Geodetic reference system "SIRGAS2000" and CRS(4674)
+
+br_states = read_state(year = 2020, showProgress = FALSE)
+```
+
+### Plots
+
+#### Total cases in Brazil
 
 ```{r, warning=FALSE, message=FALSE}
 
@@ -136,7 +167,9 @@ figure1 = sinasc %>%
               count() %>% 
               filter(idanomal == "Sim") %>% 
               rename(anomal_categ = idanomal) %>% 
-              mutate(anomal_categ = gsub("Sim", "anomalias congênitas", anomal_categ))) %>% 
+              mutate(anomal_categ = gsub("Sim", 
+                                         "anomalias congênitas", 
+                                         anomal_categ))) %>% 
   ggline(data = .,
          x = "ano_nasc",
          y = "n",
@@ -154,6 +187,8 @@ figure1
 
 
 ```
+
+#### Total cases for priority anomalies
 
 ```{r, warning=FALSE,message=FALSE}
 
@@ -183,6 +218,8 @@ figure2
 
 ```{r,warning=FALSE,message=FALSE}
 
+#| echo: false
+
 # figure3=sinasc %>% 
 #   drop_na(anomal_prioritarias) %>% 
 #   mutate(ano_nasc = year(dtnasc)) %>% 
@@ -204,25 +241,93 @@ figure2
 
 ```
 
+#### Incidency rate in Brazil
+
 ```{r, warning=FALSE, message=FALSE}
 
-figure4 = sinasc %>% 
-  mutate(ano_nasc = year(dtnasc)) %>% 
-  group_by(ano_nasc, mun_res_uf, idanomal) %>% 
-  count() %>% 
+#| echo: false
+
+# figure4 = sinasc %>% 
+#   mutate(ano_nasc = year(dtnasc)) %>% 
+#   group_by(ano_nasc, mun_res_uf, idanomal) %>% 
+#   count() %>% 
+#   pivot_wider(names_from = idanomal,
+#               values_from = n) %>%
+#   rowwise() %>% 
+#   mutate(incidencia = (sim/(sim+não))*1e5) %>% 
+#   drop_na(mun_res_uf) %>% 
+#   select(mun_res_uf, ano_nasc, incidencia) %>%
+#   pivot_wider(names_from = ano_nasc,
+#               values_from = incidencia) %>% 
+#   column_to_rownames("mun_res_uf") %>% 
+#   ggballoonplot(data, color = "#0073C2FF", fill = "#0073C2FF")
+# 
+# figure4
+```
+
+```{r, fig.align = 'center'}
+
+#| layout-ncol: 1
+
+#query count of genetic anomalies
+query4 = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  idanomal,
+COUNT(*) AS n
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, mun_res_uf, idanomal
+")
+
+#create dataframe with the response
+df4 = dbGetQuery(con, query4)
+
+#draw map
+figure4 = df4 %>% 
   pivot_wider(names_from = idanomal,
               values_from = n) %>%
   rowwise() %>% 
-  mutate(incidencia = (sim/(sim+não))*10e5) %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>% 
   drop_na(mun_res_uf) %>% 
-  select(mun_res_uf, ano_nasc, incidencia) %>%
-  pivot_wider(names_from = ano_nasc,
-              values_from = incidencia) %>% 
-  column_to_rownames("mun_res_uf") %>% 
-  ggballoonplot(data, color = "#0073C2FF", fill = "#0073C2FF")
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>% 
+  left_join(., br_states[,c(3,5,6)], join_by(mun_res_uf == name_state)) %>% 
+  filter(ano_nasc == 2023) %>% 
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0, 500, 1000, 1500, 2000, Inf), 
+                                labels = c("< 500", "500-1000", "1000-1500", "1500-2000", "> 2000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  annotation_north_arrow(location = "tr", 
+                         style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas",
+       subtitle = "dados por estado em 2023",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal() +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom')
 
 figure4
 ```
+
+#### Incidence rate per region
 
 ```{r, warning=FALSE, message=FALSE}
 
@@ -233,7 +338,7 @@ figure5 = sinasc %>%
   pivot_wider(names_from = idanomal,
               values_from = n) %>%
   rowwise() %>% 
-  mutate(incidencia = (sim/(sim+não))*10e5) %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>% 
   drop_na(mun_res_uf) %>% 
   # select(mun_res_uf, ano_nasc, incidencia) %>%
   # pivot_wider(names_from = ano_nasc,
