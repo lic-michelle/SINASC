@@ -1,0 +1,614 @@
+---
+title: "Untitled"
+---
+
+#### **Libraries**
+
+```{r}
+library(read.dbc)
+library(microdatasus)
+library(DBI)
+library(RPostgres)
+
+#data manipulation
+library(tidyverse)
+library(janitor)
+
+
+library(sf)
+library(geobr)
+```
+
+Connection
+
+```{r}
+
+#| echo: false
+
+#read the environment variables with the credentials
+readRenviron(".env")
+
+con = dbConnect(drv = RPostgres::Postgres(),
+                dbname="data_sus",
+                host = Sys.getenv("HOST_ADDRESS"),
+                port = 5432,
+                user = Sys.getenv("USER"),
+                password = Sys.getenv("PASSWORD"))
+```
+
+Map
+
+```{r, warning=FALSE, message=FALSE}
+
+#download coordinates of the states
+#Data at scale 1:250,000, using Geodetic reference system "SIRGAS2000" and CRS(4674)
+
+br_states = read_state(year = 2020, showProgress = FALSE)
+
+```
+
+CBO
+
+```{r}
+cbo = tabCBO %>% 
+  mutate(cbo_grande_grupo = substr(cod, start = 1, stop = 1)) %>%
+  mutate(cbo_subgrupo_principal = substr(cod, start = 1, stop = 2)) %>% 
+  relocate(cbo_grande_grupo, .before = cod) %>% 
+  relocate(cbo_subgrupo_principal, .before = cod) %>%
+  mutate(cbo_grande_grupo_desc = case_when(cbo_grande_grupo == "0" ~ "Forças armadas,policiais e bombeiros militares",
+                                           cbo_grande_grupo == "1" ~ "Membros superiores do poder público, dirigentes de org. de empresas e gerentes",
+                                           cbo_grande_grupo == "2" ~ "Profissionais das ciências e das artes",
+                                           cbo_grande_grupo == "3" ~ "Técnicos do nível médio",
+                                           cbo_grande_grupo == "4" ~ "Trab. de serviços administrativos",
+                                           cbo_grande_grupo == "5" ~ "Trab. dos servuços, vendedores do comércio em lojas e mercados",
+                                           cbo_grande_grupo == "6" ~ "Trab. agropecuários,florestais, da caça e pesca",
+                                           cbo_grande_grupo == "7" ~ "Trab. da produção de bens e serviços industrias 1",
+                                           cbo_grande_grupo == "8" ~ "Trab. da produção de bens e serviços industriais 2",
+                                           cbo_grande_grupo == "9" ~ "Trab. de manutenção e reparo"
+))  %>%
+  group_by(cbo_grande_grupo) %>%
+  mutate(cbo_subgrupo_desc = case_when(cbo_subgrupo_principal == "01" ~ "MEMBROS DAS FORÇAS ARMADAS",
+                                            cbo_subgrupo_principal == "02" ~ "POLICIAIS MILITARES",
+                                            cbo_subgrupo_principal == "03" ~ "BOMBEIROS MILITARES",
+                                            cbo_subgrupo_principal == "11" ~ "MEMBROS SUPERIORES E DIRIGENTES DO PODER PÚBLICO",
+                                            cbo_subgrupo_principal == "12" ~ "DIRIGENTES DE EMPRESAS E ORGANIZAÇÕES (EXCETO DE INTERESSE PÚBLICO)",
+                                            cbo_subgrupo_principal == "13" ~ "DIRETORES E GERENTES EM EMPRESA DE SERVIÇOS DE SAÚDE, DA EDUCAÇÃO, OU DE SERVIÇOS CULTURAIS, SOCIAIS OU PESSOAIS",
+                                            cbo_subgrupo_principal == "14" ~ "GERENTES",
+                                            cbo_subgrupo_principal == "20" ~ "PESQUISADORES E PROFISSIONAIS POLICIENTÍFICOS",
+                                            cbo_subgrupo_principal == "21" ~ "PROFISSIONAIS DAS CIÊNCIAS EXATAS,FÍSICAS E DA ENGENHARIA",
+                                            cbo_subgrupo_principal == "22" ~ "PROFISSIONAIS DAS CIÊNCIAS BIOLÓGICAS,DA SAÚDE E AFINS",
+                                            cbo_subgrupo_principal == "23" ~ "PROFISSIONAIS DO ENSINO",
+                                            cbo_subgrupo_principal == "24" ~ "PROFISSIONAIS DAS CIÊNCIAS JURÍDICAS",
+                                            cbo_subgrupo_principal == "25" ~ "PROFISSIONAIS DAS CIÊNCIAS SOCIAIS E HUMANAS",
+                                            cbo_subgrupo_principal == "26" ~ "COMUNICADORES, ARTISTAS E RELIGIOSOS",
+                                            cbo_subgrupo_principal == "27" ~ "PROFISSIONAIS EM GASTRONOMIA",
+                                            cbo_subgrupo_principal == "30" ~ "TÉCNICOS POLIVALENTES",
+                                            cbo_subgrupo_principal == "31" ~ "TÉCNICOS DE NÍVEL MÉDIO DAS CIÊNCIAS FÍSICAS,QUÍMICAS, ENGENHARIA E AFINS",
+                                            cbo_subgrupo_principal == "32" ~ "TÉCNICOS DE NÍVEL MÉDIO DAS CIÊNCIAS BIOLÓGICAS, BIOQUÍMICAS, DA SAÚDE E AFINS",
+                                            cbo_subgrupo_principal == "33" ~ "PROFESSORES LEIGOS E DE NÍVEL MÉDIO",
+                                            cbo_subgrupo_principal == "34" ~ "TÉCNICOS DE NÍVEL MÉDIO EM SERVIÇOS DE TRANSPORTES",
+                                            cbo_subgrupo_principal == "35" ~ "TÉCNICOS DE NIVEL MÉDIO NAS CIÊNCIAS ADMINISTRATIVAS", 
+                                            cbo_subgrupo_principal == "36" ~ "TÉCNICOS EM NIVEL MÉDIO DOS SERVIÇOS CULTURAIS, DAS COMUNICAÇÕES E DOS DESPORTOS",
+                                            cbo_subgrupo_principal == "37" ~ "TÉCNICOS EM NIVEL MÉDIO DOS SERVIÇOS CULTURAIS, DAS COMUNICAÇÕES E DOS DESPORTOS",
+                                            cbo_subgrupo_principal == "39" ~ "OUTROS TÉCNICOS DE NÍVEL MÉDIO",
+                                            cbo_subgrupo_principal == "41" ~ "ESCRITURÁRIOS",
+                                            cbo_subgrupo_principal == "42" ~ "TRABALHADORES DE ATENDIMENTO AO PÚBLICO",
+                                            cbo_subgrupo_principal == "51" ~ "TRABALHADORES DOS SERVIÇOS",
+                                            cbo_subgrupo_principal == "52" ~ "VENDEDORES E PRESTADORES DE SERVIÇOS DO COMÉRCIO", 
+                                            cbo_subgrupo_principal == "61" ~ "PRODUTORES NA EXPLORAÇÃO AGROPECUÁRIA", 
+                                            cbo_subgrupo_principal == "62" ~ "TRABALHADORES NA EXPLORAÇÃO AGROPECUÁRIA",
+                                            cbo_subgrupo_principal == "63" ~ "PESCADORES E EXTRATIVISTAS FLORESTAIS", 
+                                            cbo_subgrupo_principal == "64" ~ "TRABALHADORES DA MECANIZAÇÃO AGROPECUÁRIA E FLORESTAL", 
+                                            cbo_subgrupo_principal == "71" ~ "TRABALHADORES DA INDÚSTRIA EXTRATIVA E DA CONSTRUÇÃO CIVIL", 
+                                            cbo_subgrupo_principal == "72" ~ "TRABALHADORES DA TRANSFORMAÇÃO DE METAIS E DE COMPÓSITOS", 
+                                            cbo_subgrupo_principal == "73" ~ "TRABALHADORES DA FABRICAÇÃO E INSTALAÇÃO ELETROELETRÔNICA",
+                                            cbo_subgrupo_principal == "74" ~ "MONTADORES DE APARELHOS E INSTRUMENTOS DE PRECISÃO E MUSICAIS", 
+                                            cbo_subgrupo_principal == "75" ~ "JOALHEIROS, VIDREIROS, CERAMISTAS E AFINS",
+                                            cbo_subgrupo_principal == "76" ~ "TRABALHADORES NAS INDÚSTRIAS TÊXTIL, DO CURTIMENTO, DO VESTÚARIO E DAS ARTES GRÁFICAS",
+                                            cbo_subgrupo_principal == "77" ~ "TRABALHADORES DAS INDÚSTRIAS DE MADEIRA E DO MOBILIÁRIO", 
+                                            cbo_subgrupo_principal == "78" ~ "TRABALHADORES DE FUNÇÕES TRANSVERSAIS", 
+                                            cbo_subgrupo_principal == "79" ~ "TRABALHADORES DO ARTESANATO",
+                                            cbo_subgrupo_principal == "81" ~ "TRABALHADORES EM INDÚSTRIAS DE PROCESSOS CONTÍNUOS E OUTRAS INDÚSTRIAS",
+                                            cbo_subgrupo_principal == "82" ~ "TRABALHADORES DE INSTALAÇÕES SIDERÚRGICAS  E DE MATERIAIS DE CONSTRUÇÃO",
+                                            cbo_subgrupo_principal == "83" ~ "TRABALHADORES DE INSTALAÇÕES E MÁQUINAS DE FABRICAÇÃO DE CELULOSE E PAPEL", 
+                                            cbo_subgrupo_principal == "84" ~ "TRABALHADORES DA FABRICAÇÃO DE ALIMENTOS, BEBIDAS E FUMO",
+                                            cbo_subgrupo_principal == "86" ~ "OPERADORES DE PRODUÇÃO, CAPTAÇÃO,TRATAMENTO E DISTRIBUIÇÃO (ENERGIA, ÁGUA E UTILIDADES)",
+                                            cbo_subgrupo_principal == "91" ~ "TRABALHADORES EM SERVIÇOS DE REPARAÇÃO E MANUTENÇÃO MECÂNICA",
+                                            cbo_subgrupo_principal == "95" ~ "POLIMANTENEDORES",
+                                            cbo_subgrupo_principal == "99" ~ "OUTROS TRABALHADORES DA CONSERVAÇÃO,MANUTENÇÃO E REPARAÇÃO",
+ )) 
+
+
+```
+
+No anomalies
+
+```{r}
+
+query_nasc_sem_anomal_ano = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+COUNT(*) AS n
+FROM 
+  sinasc
+WHERE idanomal = 'não'
+AND mun_res_uf IS NOT null
+GROUP BY 
+  ano_nasc, mun_res_uf
+")
+nasc_sem_anomal_ano = dbGetQuery(con, query_nasc_sem_anomal_ano)
+```
+
+Priority anomalies
+
+```{r}
+query4_1= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df4_1 = dbGetQuery(con, query4_1)
+
+df4_1 %>% 
+  complete(ano_nasc,mun_res_uf,anomal_prioritarias) %>% 
+  mutate(cont_anomal=replace_na(cont_anomal,0)) %>% 
+  left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc, 
+                                          mun_res_uf==mun_res_uf)) %>% 
+  mutate(incidencia = (cont_anomal/(cont_anomal + n))*1e5) %>% 
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>% 
+  left_join(., br_states[,c(3,5,6)], join_by(mun_res_uf == name_state)) %>% 
+  mutate(incidencia=replace_na(incidencia,0)) %>% 
+  filter(ano_nasc == 2023) %>% 
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0, 0.00001, 20, 40, 60, 80, Inf), 
+                                labels = c("Sem informação","< 20", "20-40", "40-60", "60-80", "> 80"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias prioritárias no Brasil",
+       subtitle = "dados por estado em 2023",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size=7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ anomal_prioritarias)
+
+```
+
+Maternal age
+
+```{r}
+query6= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  idanomal,
+  idademae,
+COUNT(*) AS n
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, mun_res_uf, idademae, idanomal
+")
+
+#create dataframe with the response
+df6 = dbGetQuery(con, query6)
+
+figure6 = df6 %>%
+  mutate(faixa_etaria_mae = case_when(
+    idademae < 18 ~ "menor de 18",
+    idademae >= 18 & idademae < 35 ~ "de 18 a 34",
+    idademae >= 35 ~ "maior ou igual a 35",
+    is.na(idademae) ~ "não informado"
+  )) %>%
+  mutate(faixa_etaria_mae = fct_relevel(faixa_etaria_mae, 
+                                        c("menor de 18", 
+                                          "de 18 a 34", 
+                                          "maior ou igual a 35", 
+                                          "não informado"))) %>%
+  pivot_wider(names_from = idanomal, values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>%
+  filter(faixa_etaria_mae != "não informado") %>%
+  left_join(., nasc_sem_anomal_ano, 
+            by = c("ano_nasc", "mun_res_uf")) %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+  mutate(incidencia = replace_na(incidencia, 0)) %>%
+  filter(ano_nasc == 2016) %>%
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas por idade materna no Brasil",
+       subtitle = "dados por estado em 2016",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ faixa_etaria_mae)
+  
+```
+
+Escolaridade
+
+```{r}
+
+query8= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  idanomal,
+  escmae,
+COUNT(*) AS n
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, mun_res_uf, escmae, idanomal
+")
+
+#create dataframe with the response
+df8 = dbGetQuery(con, query8)
+
+
+figure8 = df8 %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  pivot_wider(names_from = idanomal, values_from = n) %>%  # Pivot wider before count
+  filter(!is.na(escmae)) %>%
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>%      # Calculate incidence
+  left_join(., br_states[, c(3, 5, 6)], join_by(mun_res_uf == name_state)) %>% 
+  mutate(incidencia = replace_na(incidencia, 0)) %>% 
+  filter(ano_nasc == 2023) %>% 
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0, 500, 1000, 2000, 3000, 4000, Inf), 
+                                labels = c("<500", 
+                                           "500-1000",
+                                           "1000-2000",
+                                           "2000-3000",
+                                           "3000-4000",
+                                           ">4000"))) %>% 
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias no Brasil por idade materna",
+       subtitle = "dados por estado em 2016",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ escmae)
+  
+
+```
+
+Aborto
+
+```{r}
+query9= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df9 = dbGetQuery(con, query9)
+
+df9 %>% 
+
+```
+
+Maternal occupation
+
+```{r}
+
+query7= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  idanomal,codocupmae,
+COUNT(*) AS n
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, mun_res_uf, idanomal, codocupmae
+")
+
+#create dataframe with the response
+df7= dbGetQuery(con, query7)
+
+cbo2 = cbo %>%
+distinct(nome, .keep_all =  TRUE)
+
+figure7 = df7 %>%
+  left_join(., cbo2, join_by(codocupmae == nome)) %>% 
+  group_by(ano_nasc, idanomal, cbo_grande_grupo, cbo_grande_grupo_desc) %>%
+  drop_na(cbo_grande_grupo_desc) %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>% 
+  rowwise() %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>%
+   mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>% 
+  left_join(., br_states[,c(3,5,6)], join_by(mun_res_uf == name_state)) %>% 
+  filter(ano_nasc == 2023) %>% 
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0, 500, 1000, 1500, 2000, Inf), 
+                                labels = c("< 500", "500-1000", "1000-1500", "1500-2000", "> 2000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência por 100 mil hab. de anomalias  por Estado em 2023 de acordo com a ocupação da gestante",
+       captin = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ cbo_grande_grupo_desc)
+```
+
+Consultas pre-natal
+
+```{r}
+#query count of genetic anomalies
+query10 = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  idanomal,consultas,
+COUNT(*) AS n
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, mun_res_uf, idanomal,consultas
+")
+
+df10 = dbGetQuery(con, query10)
+
+figure10 =df10 %>% 
+  pivot_wider(names_from = idanomal,
+              values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>% 
+  drop_na(mun_res_uf) %>% 
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>% 
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>% 
+  left_join(., br_states[,c(3,5,6)], join_by(mun_res_uf == name_state)) %>% 
+  filter(ano_nasc == 2023) %>% 
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0, 500, 1000, 1500, 2000, Inf), 
+                                labels = c("< 500", "500-1000", "1000-1500", "1500-2000", "> 2000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência por 100 mil hab. de anomalias por Estado em 2023 segundo número de consultas pré-natal",
+       captin = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ consultas)
+  
+
+```
+
+Semanas de gestação
+
+```{r}
+query11= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df11 = dbGetQuery(con, query11)
+
+df11 %>% 
+
+```
+
+Tipo de gravidez
+
+```{r}
+query12= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df12 = dbGetQuery(con, query12)
+
+df12 %>% 
+```
+
+Tipo de parto
+
+```{r}
+query13= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df13 = dbGetQuery(con, query13)
+
+df13 %>% 
+```
+
+Sexo do recém nascido
+
+```{r}
+query14= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df14 = dbGetQuery(con, query14)
+
+df14 %>% 
+
+```
+
+Apgar5
+
+```{r}
+query15= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df15= dbGetQuery(con, query15)
+
+df15 %>% 
+
+```
+
+Peso
+
+```{r}
+query16= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df16= dbGetQuery(con, query16)
+
+df16 %>% 
+```
