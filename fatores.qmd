@@ -477,7 +477,6 @@ figure4_1
 ```
 
 ```{r}
-#filename=anomalia_priotaria_incidencia
 figure4_2 = sinasc %>% 
   mutate(ano_nasc = year(dtnasc)) %>% 
   group_by(ano_nasc, anomal_prioritarias) %>% 
@@ -580,7 +579,6 @@ figure5_1
 
 ```{r}
 #Idade
-#filename=incidencia_idade
 figure6 = sinasc %>% 
   mutate(ano_nasc = year(dtnasc)) %>% 
   mutate(faixa_etaria_mae = case_when(idademae < 18 ~ "menor de 18",
@@ -610,7 +608,6 @@ figure6
 
 ```{r}
 #Ocupação
-#filename= incidencia_cbo_grande_grupo
 cbo2 = cbo %>%
 distinct(nome, .keep_all =  TRUE)
 
