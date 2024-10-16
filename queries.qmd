@@ -242,7 +242,7 @@ figure6 = df6 %>%
   mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
   left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
   mutate(incidencia = replace_na(incidencia, 0)) %>%
-  filter(ano_nasc == 2016) %>%
+  filter(ano_nasc == 2023) %>%
   mutate(incidencia_categ = cut(incidencia, 
                                 breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
                                 labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
@@ -264,7 +264,7 @@ figure6 = df6 %>%
                          keyheight = 0.5
                        )) +
   labs(title = "Incidência de anomalias congênitas por idade materna no Brasil",
-       subtitle = "dados por estado em 2016",
+       subtitle = "dados por estado em 2023",
        caption = "Source: DataSUS - SINASC") +
   theme_minimal(base_size = 7) +
   theme(title=element_text(face='bold'),
@@ -347,18 +347,64 @@ query9= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,
-COUNT(*) AS cont_anomal
+  qtd_filmort,
+COUNT(*) AS n
 FROM 
   sinasc
-WHERE anomal_prioritarias <> 'outras_anomalias'
 GROUP BY 
-  ano_nasc, mun_res_uf, anomal_prioritarias
+  ano_nasc, mun_res_uf, qtdfilmort
 ")
 
 df9 = dbGetQuery(con, query9)
 
-df9 %>% 
+figure9 = df9 %>% 
+  mutate(qtd_filmort = case_when(
+    is.na(qtdfilmort) ~ "Ignorado",
+    qtdfilmort == 0 ~ "Nenhum",
+    qtdfilmort == 1 ~ "1",
+    qtdfilmort >= 2 ~ "≥2" 
+  )) %>% 
+  group_by(ano_nasc, qtd_filmort, idanomal) %>%
+  pivot_wider(names_from = idanomal, values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>%
+  left_join(., nasc_sem_anomal_ano, 
+            by = c("ano_nasc", "mun_res_uf")) %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+  mutate(incidencia = replace_na(incidencia, 0)) %>%
+  filter(ano_nasc == 2023) %>%
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas no Brasil por quantidade de abortos prévios",
+       subtitle = "dados por estado em 2023",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ qtd_filmort)
+  
+  
 
 ```
 
@@ -491,18 +537,63 @@ query11= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,
-COUNT(*) AS cont_anomal
+  gestacao,
+COUNT(*) AS n
 FROM 
   sinasc
-WHERE anomal_prioritarias <> 'outras_anomalias'
 GROUP BY 
-  ano_nasc, mun_res_uf, anomal_prioritarias
+  ano_nasc, mun_res_uf,gestacao
 ")
 
 df11 = dbGetQuery(con, query11)
 
-df11 %>% 
+ figure11 = df11 %>% 
+   mutate(gestacao_agrupado = case_when(
+    gestacao %in% c("Menos de 22 semanas", "22 a 27 semanas", "28 a 31 semanas") ~ "Menor que 37 semanas",
+    gestacao %in% c("37 a 41 semanas") ~ "37 a 41 semanas",
+    gestacao %in% c("42 semanas ou mais") ~ "42 semanas ou mais",
+    is.na(gestacao) ~ "não informado"
+  )) %>%
+  group_by(ano_nasc, mun_res_uf,gestacao_agrupado, idanomal) %>%
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  rowwise() %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  filter(gestacao_agrupado != "não informado") %>%  
+  left_join(., nasc_sem_anomal_ano, 
+            by = c("ano_nasc", "mun_res_uf")) %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+  mutate(incidencia = replace_na(incidencia, 0)) %>%
+  filter(ano_nasc == 2023) %>%
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas por semanas de gestação no Brasil",
+       subtitle = "dados por estado em 2023",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ gestacao_agrupado)
 
 ```
 
@@ -513,18 +604,56 @@ query12= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,
-COUNT(*) AS cont_anomal
+  gravidez,
+COUNT(*) AS n
 FROM 
   sinasc
-WHERE anomal_prioritarias <> 'outras_anomalias'
 GROUP BY 
-  ano_nasc, mun_res_uf, anomal_prioritarias
+  ano_nasc, mun_res_uf, gravidez
 ")
 
 df12 = dbGetQuery(con, query12)
 
-df12 %>% 
+figure12 = df12 %>% 
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  filter(!is.na(gravidez))
+  left_join(., nasc_sem_anomal_ano, 
+            by = c("ano_nasc", "mun_res_uf")) %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+  mutate(incidencia = replace_na(incidencia, 0)) %>%
+  filter(ano_nasc == 2023) %>%
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas por tipo de gravidez no Brasil",
+       subtitle = "dados por estado em 2023",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ faixa_etaria_mae)
+  
 ```
 
 Tipo de parto
@@ -534,18 +663,56 @@ query13= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,
-COUNT(*) AS cont_anomal
+  parto,
+COUNT(*) AS n
 FROM 
   sinasc
-WHERE anomal_prioritarias <> 'outras_anomalias'
 GROUP BY 
-  ano_nasc, mun_res_uf, anomal_prioritarias
+  ano_nasc, mun_res_uf, parto
 ")
 
 df13 = dbGetQuery(con, query13)
 
-df13 %>% 
+figure13 = df13 %>% 
+  pivot_wider(names_from = idanomal, values_from = n) %>%
+  rowwise() %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>%
+  filter(!is.na(parto)) %>%
+  left_join(., nasc_sem_anomal_ano, 
+            by = c("ano_nasc", "mun_res_uf")) %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+  mutate(incidencia = replace_na(incidencia, 0)) %>%
+  filter(ano_nasc == 2023) %>%
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas por idade materna no Brasil",
+       subtitle = "dados por estado em 2016",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ parto)
 ```
 
 Sexo do recém nascido
@@ -555,18 +722,63 @@ query14= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,
-COUNT(*) AS cont_anomal
+  sexo,
+COUNT(*) AS n
 FROM 
   sinasc
-WHERE anomal_prioritarias <> 'outras_anomalias'
 GROUP BY 
-  ano_nasc, mun_res_uf, anomal_prioritarias
+  ano_nasc, mun_res_uf, sexo
 ")
 
 df14 = dbGetQuery(con, query14)
 
-df14 %>% 
+figure14 = df14 %>% 
+  mutate(sexo_bb = case_when(
+    sexo %in% c("Feminino") ~ "Feminino",
+    sexo %in% c("Masculino") ~ "Masculino",
+    is.na(sexo) ~ "não informado")) %>%
+  group_by(ano_nasc, mun_res_uf, sexo_bb, idanomal) %>%
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  rowwise() %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  filter(sexo_bb != 'não informado') %>% 
+  left_join(., nasc_sem_anomal_ano, 
+              by = c("ano_nasc", "mun_res_uf")) %>%
+    mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+    mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+    mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+    left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+    mutate(incidencia = replace_na(incidencia, 0)) %>%
+    filter(ano_nasc == 2023) %>%
+    mutate(incidencia_categ = cut(incidencia, 
+                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+    ggplot(aes(geometry = geom,
+               fill = incidencia_categ)) +
+    geom_sf() +
+    coord_sf(crs = 4674, expand = FALSE) +
+    # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+    # annotation_north_arrow(location = "tr", 
+    #                        style = north_arrow_fancy_orienteering) +
+    scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                         guide=guide_legend(
+                           direction='horizontal',
+                           title.position='top',
+                           title.hjust = 0.5,
+                           label.hjust = 0.5,
+                           label.position = 'bottom',
+                           keywidth = 3,
+                           keyheight = 0.5
+                         )) +
+    labs(title = "Incidência de anomalias congênitas por sexo do recém-nascido no Brasil",
+         subtitle = "dados por estado em 2023",
+         caption = "Source: DataSUS - SINASC") +
+    theme_minimal(base_size = 7) +
+    theme(title=element_text(face='bold'),
+          legend.position = 'bottom') +
+    facet_wrap(~ sexo_bb)
+
+
 
 ```
 
@@ -577,18 +789,63 @@ query15= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,
-COUNT(*) AS cont_anomal
+  apgar5,
+COUNT(*) AS n
 FROM 
   sinasc
-WHERE anomal_prioritarias <> 'outras_anomalias'
 GROUP BY 
-  ano_nasc, mun_res_uf, anomal_prioritarias
+  ano_nasc, mun_res_uf, apgar5
 ")
 
 df15= dbGetQuery(con, query15)
 
-df15 %>% 
+figure15 = df15 %>% 
+  mutate(apgar_5 = case_when(
+    apgar5 < 7 ~ "menor que 7",
+    apgar5 >= 7 ~ "maior ou igual a 7",
+    is.na(apgar5) ~ "não informado"
+  )) %>% 
+  group_by(ano_nasc, mun_res_uf,idanomal, apgar_5) %>%
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  rowwise() %>% 
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
+  filter(apgar_5 != "não informado") %>% 
+  left_join(., nasc_sem_anomal_ano, 
+            by = c("ano_nasc", "mun_res_uf")) %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+  mutate(incidencia = replace_na(incidencia, 0)) %>%
+  filter(ano_nasc == 2016) %>%
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas por Apgar do 5º minuto no Brasil",
+       subtitle = "dados por estado em 2016",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ apgar_5)
+  
 
 ```
 
@@ -599,16 +856,61 @@ query16= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,
-COUNT(*) AS cont_anomal
+  anomal_prioritarias,peso,
+COUNT(*) AS n
 FROM 
   sinasc
-WHERE anomal_prioritarias <> 'outras_anomalias'
 GROUP BY 
-  ano_nasc, mun_res_uf, anomal_prioritarias
+  ano_nasc, mun_res_uf, peso
 ")
 
 df16= dbGetQuery(con, query16)
 
-df16 %>% 
+figure16 = df16 %>% 
+  mutate(peso_rn = case_when(
+    peso < 2500 ~ "menor que 2500",
+    peso >= 2500 ~ "maior ou igual a 2500",
+    is.na(peso) ~ "não informado"
+  )) %>%
+  group_by(ano_nasc,mun_res_uf, idanomal, peso_rn) %>%
+  pivot_wider(names_from = idanomal, values_from = n) %>% 
+  rowwise() %>% 
+  mutate(incidencia = (sim/(sim+não))*1e5) %>%
+  filter(peso_rn != "não informado") %>% 
+  left_join(., nasc_sem_anomal_ano,
+            by = c("ano_nasc", "mun_res_uf")) %>%
+  mutate(mun_res_uf = gsub("Amazonas", "Amazônas", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" de ", " De ", mun_res_uf)) %>%
+  mutate(mun_res_uf = gsub(" do ", " Do ", mun_res_uf)) %>%
+  left_join(., br_states[, c(3, 5, 6)], by = c("mun_res_uf" = "name_state")) %>%
+  mutate(incidencia = replace_na(incidencia, 0)) %>%
+  filter(ano_nasc == 2023) %>%
+  mutate(incidencia_categ = cut(incidencia, 
+                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
+  ggplot(aes(geometry = geom,
+             fill = incidencia_categ)) +
+  geom_sf() +
+  coord_sf(crs = 4674, expand = FALSE) +
+  # annotation_scale(location = "br", style = "ticks", plot_unit = "km") +
+  # annotation_north_arrow(location = "tr", 
+  #                        style = north_arrow_fancy_orienteering) +
+  scale_fill_viridis_d(name = "Incidência por 100 mil hab.",
+                       guide=guide_legend(
+                         direction='horizontal',
+                         title.position='top',
+                         title.hjust = 0.5,
+                         label.hjust = 0.5,
+                         label.position = 'bottom',
+                         keywidth = 3,
+                         keyheight = 0.5
+                       )) +
+  labs(title = "Incidência de anomalias congênitas por idade materna no Brasil",
+       subtitle = "dados por estado em 2023",
+       caption = "Source: DataSUS - SINASC") +
+  theme_minimal(base_size = 7) +
+  theme(title=element_text(face='bold'),
+        legend.position = 'bottom') +
+  facet_wrap(~ peso_rn)
+
 ```
