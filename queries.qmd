@@ -5,6 +5,8 @@ title: "Untitled"
 #### **Libraries**
 
 ```{r}
+#| echo: false
+
 library(read.dbc)
 library(microdatasus)
 library(DBI)
@@ -13,10 +15,9 @@ library(RPostgres)
 #data manipulation
 library(tidyverse)
 library(janitor)
-
-
 library(sf)
 library(geobr)
+
 ```
 
 Connection
@@ -140,7 +141,7 @@ GROUP BY
 nasc_sem_anomal_ano = dbGetQuery(con, query_nasc_sem_anomal_ano)
 ```
 
-Priority anomalies
+Priority anomalies (figure4_1)
 
 ```{r}
 query4_1= paste0("
@@ -158,7 +159,7 @@ GROUP BY
 
 df4_1 = dbGetQuery(con, query4_1)
 
-df4_1 %>% 
+figure4_1= df4_1 %>% 
   complete(ano_nasc,mun_res_uf,anomal_prioritarias) %>% 
   mutate(cont_anomal=replace_na(cont_anomal,0)) %>% 
   left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc, 
@@ -200,7 +201,7 @@ df4_1 %>%
 
 ```
 
-Maternal age
+Maternal age (figure6)
 
 ```{r}
 query6= paste0("
@@ -273,7 +274,7 @@ figure6 = df6 %>%
   
 ```
 
-Escolaridade
+Escolaridade (figure8)
 
 ```{r}
 
@@ -340,19 +341,19 @@ figure8 = df8 %>%
 
 ```
 
-Aborto
+Aborto (figure9)
 
 ```{r}
 query9= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
-  mun_res_uf,
-  qtd_filmort,
+  mun_res_uf,idanomal,
+  qtdfilmort,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, qtdfilmort
+  ano_nasc, mun_res_uf,idanomal, qtdfilmort
 ")
 
 df9 = dbGetQuery(con, query9)
@@ -408,7 +409,7 @@ figure9 = df9 %>%
 
 ```
 
-Maternal occupation
+Maternal occupation (figure7)
 
 ```{r}
 
@@ -471,7 +472,7 @@ figure7 = df7 %>%
   facet_wrap(~ cbo_grande_grupo_desc)
 ```
 
-Consultas pre-natal
+Consultas pre-natal (fiigure10)
 
 ```{r}
 #query count of genetic anomalies
@@ -530,19 +531,20 @@ figure10 =df10 %>%
 
 ```
 
-Semanas de gestação
+Semanas de gestação (figure11)
 
 ```{r}
 query11= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
+  idanomal,
   gestacao,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf,gestacao
+  ano_nasc, mun_res_uf,idanomal,gestacao
 ")
 
 df11 = dbGetQuery(con, query11)
@@ -597,7 +599,7 @@ df11 = dbGetQuery(con, query11)
 
 ```
 
-Tipo de gravidez
+Tipo de gravidez (figure12)
 
 ```{r}
 query12= paste0("
@@ -656,7 +658,7 @@ figure12 = df12 %>%
   
 ```
 
-Tipo de parto
+Tipo de parto(figure13)
 
 ```{r}
 query13= paste0("
@@ -715,7 +717,7 @@ figure13 = df13 %>%
   facet_wrap(~ parto)
 ```
 
-Sexo do recém nascido
+Sexo do recém nascido (figure14)
 
 ```{r}
 query14= paste0("
@@ -782,7 +784,7 @@ figure14 = df14 %>%
 
 ```
 
-Apgar5
+Apgar5 (figure15)
 
 ```{r}
 query15= paste0("
@@ -849,7 +851,7 @@ figure15 = df15 %>%
 
 ```
 
-Peso
+Peso (figure16)
 
 ```{r}
 query16= paste0("
