@@ -245,7 +245,7 @@ figure6 = df6 %>%
   mutate(incidencia = replace_na(incidencia, 0)) %>%
   filter(ano_nasc == 2023) %>%
   mutate(incidencia_categ = cut(incidencia, 
-                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                breaks = c(0,0.0001,1000, 5000, 10000, 20000, 30000,40000, Inf), 
                                 labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
   ggplot(aes(geometry = geom,
              fill = incidencia_categ)) +
@@ -378,7 +378,8 @@ figure9 = df9 %>%
   mutate(incidencia = replace_na(incidencia, 0)) %>%
   filter(ano_nasc == 2023) %>%
   mutate(incidencia_categ = cut(incidencia, 
-                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                breaks = c(0,0.0001,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                         
                                 labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
   ggplot(aes(geometry = geom,
              fill = incidencia_categ)) +
@@ -570,7 +571,8 @@ df11 = dbGetQuery(con, query11)
   mutate(incidencia = replace_na(incidencia, 0)) %>%
   filter(ano_nasc == 2023) %>%
   mutate(incidencia_categ = cut(incidencia, 
-                                breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                                breaks = c(0,0.0001,1000, 5000, 10000, 20000, 30000,40000, Inf), 
+                         
                                 labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) %>%
   ggplot(aes(geometry = geom,
              fill = incidencia_categ)) +
@@ -665,12 +667,12 @@ query13= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  parto,
+  parto,idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, parto
+  ano_nasc, mun_res_uf, parto,idanomal
 ")
 
 df13 = dbGetQuery(con, query13)
@@ -724,12 +726,12 @@ query14= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  sexo,
+  sexo,idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, sexo
+  ano_nasc, mun_res_uf, sexo, idanomal
 ")
 
 df14 = dbGetQuery(con, query14)
@@ -792,11 +794,12 @@ SELECT
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
   apgar5,
+  idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, apgar5
+  ano_nasc, mun_res_uf, apgar5, idnomal
 ")
 
 df15= dbGetQuery(con, query15)
@@ -858,12 +861,13 @@ query16= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,peso,
+  peso,
+  idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, peso
+  ano_nasc, mun_res_uf, peso, idanomal
 ")
 
 df16= dbGetQuery(con, query16)
