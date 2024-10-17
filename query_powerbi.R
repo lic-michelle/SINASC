@@ -6,8 +6,8 @@ library(tidyverse)
 
 con = dbConnect(drv = RPostgres::Postgres(),
                 dbname="data_sus",
-                host = 150.161.248.197,
-                port = 5432,
+                host = "150.161.248.197",
+                port = "5432",
                 user = "michelle",
                 password = "gratiluz")
                 
@@ -49,7 +49,8 @@ df4_1= df4_1 %>%
   mutate(incidencia = (cont_anomal/(cont_anomal + n))*1e5) %>% 
   mutate(incidencia_categ = cut(incidencia, 
                                 breaks = c(0, 0.00001, 20, 40, 60, 80, Inf), 
-                                labels = c("Sem informação","< 20", "20-40", "40-60", "60-80", "> 80")))
+                                labels = c("Sem informação","< 20", "20-40", 
+                                           "40-60", "60-80", "> 80")))
 #Maternal age
 
 query6= paste0("
@@ -83,10 +84,14 @@ df6 = df6 %>%
   group_by(ano_nasc,mun_res_uf,idanomal,faixa_etaria_mae) %>% 
   pivot_wider(names_from = idanomal, values_from = n) %>%
   rowwise() %>% 
-  mutate(incidencia = (sim / (sim + não)) * 1e5)
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>%
   mutate(incidencia_categ = cut(incidencia, 
-                              breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                              labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) 
+                              breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                         30000, 40000, Inf), 
+                              labels = c("Sem Informação","0-1000", "1000-5000", 
+                                         "5000-10000", "10000-20000", 
+                                         "20000-30000", "30000-40000", 
+                                         ">40000"))) 
 
 
 #Education
@@ -108,10 +113,14 @@ df8 = dbGetQuery(con, query8)
 df8 = df8 %>% 
   pivot_wider(names_from = idanomal, values_from = n) %>%
   rowwise() %>% 
-  mutate(incidencia = (sim / (sim + não)) * 1e5)
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>%
   mutate(incidencia_categ = cut(incidencia, 
-                              breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                              labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000"))) 
+                              breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                         30000, 40000, Inf), 
+                              labels = c("Sem informação","0-1000", 
+                                         "1000-5000", "5000-10000", 
+                                         "10000-20000", "20000-30000",
+                                         "30000-40000", ">40000"))) 
 
 #Abortion
 query9= paste0("
@@ -138,14 +147,17 @@ df9 = df9 %>%
   group_by(ano_nasc, qtd_filmort, idanomal) %>% 
   pivot_wider(names_from = idanomal, values_from = n) %>%
   rowwise() %>% 
-  mutate(incidencia = (sim / (sim + não)) * 1e5)
+  mutate(incidencia = (sim / (sim + não)) * 1e5) %>%
   mutate(incidencia_categ = cut(incidencia, 
-                              breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                              labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
-  
+                              breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                         30000, 40000, Inf), 
+                              labels = c("Sem informação","0-1000", 
+                                         "1000-5000", "5000-10000", 
+                                         "10000-20000", "20000-30000",
+                                         "30000-40000", ">40000")))   
 #Prenatal consultations
-  #query count of genetic anomalies
-  query10 = paste0("
+#query count of genetic anomalies
+query10 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -157,19 +169,22 @@ GROUP BY
   ano_nasc, mun_res_uf, idanomal,consultas
 ")
   
-  df10 = dbGetQuery(con, query10)
+df10 = dbGetQuery(con, query10)
   
-  df10 =df10 %>% 
+df10 =df10 %>% 
     pivot_wider(names_from = idanomal,
                 values_from = n) %>%
     rowwise() %>% 
     mutate(incidencia = (sim/(sim+não))*1e5) %>% 
     mutate(incidencia_categ = cut(incidencia, 
-                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
-
+                                  breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                             30000, 40000, Inf), 
+                                  labels = c("Sem informação","0-1000", 
+                                             "1000-5000", "5000-10000", 
+                                             "10000-20000", "20000-30000",
+                                             "30000-40000", ">40000")))   
 # Pregnancy weeks
-  query11= paste0("
+query11= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -182,9 +197,9 @@ GROUP BY
   ano_nasc, mun_res_uf,idanomal,gestacao
 ")
   
-  df11 = dbGetQuery(con, query11)
+df11 = dbGetQuery(con, query11)
   
-  df11 = df11 %>% 
+df11 = df11 %>% 
     mutate(gestacao_agrupado = case_when(
       gestacao %in% c("Menos de 22 semanas", "22 a 27 semanas", "28 a 31 semanas") ~ "Menor que 37 semanas",
       gestacao %in% c("37 a 41 semanas") ~ "37 a 41 semanas",
@@ -197,71 +212,85 @@ GROUP BY
     mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
     filter(gestacao_agrupado != "não informado") %>%
     mutate(incidencia_categ = cut(incidencia, 
-                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
+                                  breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                             30000, 40000, Inf), 
+                                  labels = c("Sem informação","0-1000", 
+                                             "1000-5000", "5000-10000", 
+                                             "10000-20000", "20000-30000",
+                                             "30000-40000", ">40000")))   
+  
 #Single or multiple pregnancy
-query12= paste0("
+query12 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
   gravidez,
+  idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, gravidez
+  ano_nasc, mun_res_uf, gravidez, idanomal
 ")
   
-  df12 = dbGetQuery(con, query12)
+df12 = dbGetQuery(con, query12)
   
-  df12 = df12 %>% 
+df12 = df12 %>% 
     pivot_wider(names_from = idanomal, values_from = n) %>% 
     mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
     filter(!is.na(gravidez)) %>% 
     mutate(incidencia_categ = cut(incidencia, 
-                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
-
+                                  breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                             30000, 40000, Inf), 
+                                  labels = c("Sem informação","0-1000", 
+                                             "1000-5000", "5000-10000", 
+                                             "10000-20000", "20000-30000",
+                                             "30000-40000", ">40000")))   
 #Type of delivery
-  query13= paste0("
+query13= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
   parto,
+  idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, parto
+  ano_nasc, mun_res_uf, parto, idanomal
 ")
   
-  df13 = dbGetQuery(con, query13)
+df13 = dbGetQuery(con, query13)
   
-  df13 = df13 %>% 
+df13 = df13 %>% 
     pivot_wider(names_from = idanomal, values_from = n) %>%
     rowwise() %>% 
     mutate(incidencia = (sim / (sim + não)) * 1e5) %>%
     filter(!is.na(parto)) %>%
     mutate(incidencia_categ = cut(incidencia, 
-                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
-  
+                                  breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                             30000, 40000, Inf), 
+                                  labels = c("Sem informação","0-1000", 
+                                             "1000-5000", "5000-10000", 
+                                             "10000-20000", "20000-30000",
+                                             "30000-40000", ">40000")))  
 # Baby gender
-  query14= paste0("
+query14= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
   sexo,
+  idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, sexo
+  ano_nasc, mun_res_uf, sexo, idanomal
 ")
   
-  df14 = dbGetQuery(con, query14)
+df14 = dbGetQuery(con, query14)
   
-  df14 = df14 %>% 
+df14 = df14 %>% 
     mutate(sexo_bb = case_when(
       sexo %in% c("Feminino") ~ "Feminino",
       sexo %in% c("Masculino") ~ "Masculino",
@@ -272,25 +301,29 @@ GROUP BY
     mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
     filter(sexo_bb != 'não informado') %>% 
     mutate(incidencia_categ = cut(incidencia, 
-                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
-
+                                  breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                             30000, 40000, Inf), 
+                                  labels = c("Sem informação","0-1000", 
+                                             "1000-5000", "5000-10000", 
+                                             "10000-20000", "20000-30000",
+                                             "30000-40000", ">40000")))
 # 5-minute Apgar score
-  query15= paste0("
+query15= paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
   apgar5,
+  idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, apgar5
+  ano_nasc, mun_res_uf, apgar5, idanomal
 ")
   
-  df15= dbGetQuery(con, query15)
+df15= dbGetQuery(con, query15)
   
-  df15 = df15 %>% 
+df15 = df15 %>% 
     mutate(apgar_5 = case_when(
       apgar5 < 7 ~ "menor que 7",
       apgar5 >= 7 ~ "maior ou igual a 7",
@@ -302,25 +335,29 @@ GROUP BY
     mutate(incidencia = (sim / (sim + não)) * 1e5) %>% 
     filter(apgar_5 != "não informado") %>% 
     mutate(incidencia_categ = cut(incidencia, 
-                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
-  
+                                  breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                             30000, 40000, Inf), 
+                                  labels = c("Sem informação","0-1000", 
+                                             "1000-5000", "5000-10000", 
+                                             "10000-20000", "20000-30000",
+                                             "30000-40000", ">40000")))     
 #Newborn's weight
-  query16= paste0("
+query16 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
-  anomal_prioritarias,peso,
+  peso,
+  idanomal,
 COUNT(*) AS n
 FROM 
   sinasc
 GROUP BY 
-  ano_nasc, mun_res_uf, peso
+  ano_nasc, mun_res_uf, peso, idanomal
 ")
   
-  df16= dbGetQuery(con, query16)
+df16= dbGetQuery(con, query16)
   
-  df16 = df16 %>% 
+df16 = df16 %>% 
     mutate(peso_rn = case_when(
       peso < 2500 ~ "menor que 2500",
       peso >= 2500 ~ "maior ou igual a 2500",
@@ -332,9 +369,13 @@ GROUP BY
     mutate(incidencia = (sim/(sim+não))*1e5) %>%
     filter(peso_rn != "não informado") %>% 
     mutate(incidencia_categ = cut(incidencia, 
-                                  breaks = c(0,1000, 5000, 10000, 20000, 30000,40000, Inf), 
-                                  labels = c("Sem informação","0-1000", "1000-5000", "10000-20000", "20000-30000","30000-40000", ">40000")))
+                                  breaks = c(0, 0.00001, 1000, 5000, 10000, 20000, 
+                                             30000, 40000, Inf), 
+                                  labels = c("Sem informação","0-1000", 
+                                             "1000-5000", "5000-10000", 
+                                             "10000-20000", "20000-30000",
+                                             "30000-40000", ">40000")))     
   
-  
-    
-  
+#disconnect to the db
+dbDisconnect(con)
+
