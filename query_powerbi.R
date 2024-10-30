@@ -41,7 +41,7 @@ GROUP BY
 ")
 
 df4_1 = dbGetQuery(con, query4_1)
-df4_1= df4_1 %>% 
+df4_1 = df4_1 %>% 
   complete(ano_nasc,mun_res_uf,anomal_prioritarias) %>% 
   mutate(cont_anomal=replace_na(cont_anomal,0)) %>% 
   left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc, 
@@ -50,10 +50,12 @@ df4_1= df4_1 %>%
   mutate(incidencia_categ = cut(incidencia, 
                                 breaks = c(0, 0.00001, 20, 40, 60, 80, Inf), 
                                 labels = c("Sem informação","< 20", "20-40", 
-                                           "40-60", "60-80", "> 80")))
+                                           "40-60", "60-80", "> 80"))) %>%
+  mutate_at(.vars = c("cont_anomal", "n"), .funs = ~ as.integer(.x))
+
 #Maternal age
 
-query6= paste0("
+query6 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -83,11 +85,13 @@ df6 = df6 %>%
                               labels = c("Sem Informação","0-1000", "1000-5000", 
                                          "5000-10000", "10000-20000", 
                                          "20000-30000", "30000-40000", 
-                                         ">40000"))) 
+                                         ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x))
+  
 
 
 #Education
-query8= paste0("
+query8 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -111,10 +115,11 @@ df8 = df8 %>%
                               labels = c("Sem informação","0-1000", 
                                          "1000-5000", "5000-10000", 
                                          "10000-20000", "20000-30000",
-                                         "30000-40000", ">40000"))) 
+                                         "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x)) 
 
 #Abortion
-query9= paste0("
+query9 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,idanomal,
@@ -145,7 +150,9 @@ df9 = df9 %>%
                               labels = c("Sem informação","0-1000", 
                                          "1000-5000", "5000-10000", 
                                          "10000-20000", "20000-30000",
-                                         "30000-40000", ">40000")))   
+                                         "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x)) 
+
 #Prenatal consultations
 query10 = paste0("
 SELECT 
@@ -161,7 +168,7 @@ GROUP BY
   
 df10 = dbGetQuery(con, query10)
   
-df10 =df10 %>% 
+df10 = df10 %>% 
     pivot_wider(names_from = idanomal,
                 values_from = n) %>%
     rowwise() %>% 
@@ -173,9 +180,11 @@ df10 =df10 %>%
                                   labels = c("Sem informação","0-1000", 
                                              "1000-5000", "5000-10000", 
                                              "10000-20000", "20000-30000",
-                                             "30000-40000", ">40000")))   
+                                             "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x))   
+
 # Pregnancy weeks
-query11= paste0("
+query11 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -207,7 +216,8 @@ df11 = df11 %>%
                                   labels = c("Sem informação","0-1000", 
                                              "1000-5000", "5000-10000", 
                                              "10000-20000", "20000-30000",
-                                             "30000-40000", ">40000")))   
+                                             "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x))   
   
 #Single or multiple pregnancy
 query12 = paste0("
@@ -236,9 +246,11 @@ df12 = df12 %>%
                                   labels = c("Sem informação","0-1000", 
                                              "1000-5000", "5000-10000", 
                                              "10000-20000", "20000-30000",
-                                             "30000-40000", ">40000")))   
+                                             "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x)) 
+
 #Type of delivery
-query13= paste0("
+query13 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -265,9 +277,11 @@ df13 = df13 %>%
                                   labels = c("Sem informação","0-1000", 
                                              "1000-5000", "5000-10000", 
                                              "10000-20000", "20000-30000",
-                                             "30000-40000", ">40000")))  
+                                             "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x)) 
+
 # Baby gender
-query14= paste0("
+query14 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -298,9 +312,11 @@ df14 = df14 %>%
                                   labels = c("Sem informação","0-1000", 
                                              "1000-5000", "5000-10000", 
                                              "10000-20000", "20000-30000",
-                                             "30000-40000", ">40000")))
+                                             "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x)) 
+
 # 5-minute Apgar score
-query15= paste0("
+query15 = paste0("
 SELECT 
   EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
   mun_res_uf,
@@ -317,7 +333,7 @@ GROUP BY
   ano_nasc, mun_res_uf,apgar_5, idanomal
 ")
   
-df15= dbGetQuery(con, query15)
+df15 = dbGetQuery(con, query15)
   
 df15 = df15 %>% 
     pivot_wider(names_from = idanomal, values_from = n) %>% 
@@ -331,7 +347,9 @@ df15 = df15 %>%
                                   labels = c("Sem informação","0-1000", 
                                              "1000-5000", "5000-10000", 
                                              "10000-20000", "20000-30000",
-                                             "30000-40000", ">40000")))     
+                                             "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x)) 
+
 #Newborn's weight
 query16 = paste0("
 SELECT 
@@ -350,7 +368,7 @@ GROUP BY
   ano_nasc, mun_res_uf,peso_rn, idanomal
 ")
   
-df16= dbGetQuery(con, query16)
+df16 = dbGetQuery(con, query16)
   
 df16 = df16 %>% 
     pivot_wider(names_from = idanomal, values_from = n) %>% 
@@ -363,7 +381,8 @@ df16 = df16 %>%
                                   labels = c("Sem informação","0-1000", 
                                              "1000-5000", "5000-10000", 
                                              "10000-20000", "20000-30000",
-                                             "30000-40000", ">40000")))     
+                                             "30000-40000", ">40000"))) %>%
+  mutate_at(.vars = c("não", "sim"), .funs = ~ as.integer(.x))      
   
 #disconnect to the db
 dbDisconnect(con)
