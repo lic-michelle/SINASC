@@ -1,0 +1,391 @@
+---
+title: ""
+---
+
+Conexão e bibliotecas
+
+```{r}
+library(DBI)
+library(RPostgres)
+library(tidyverse)
+library(rstatix)
+
+
+con = dbConnect(drv = RPostgres::Postgres(),
+                dbname="data_sus",
+                host = "150.161.248.197",
+                port = "5432",
+                user = "michelle",
+                password = "gratiluz")
+```
+
+Query e cálculo unico
+-- Falta colocar o id de cada linha
+```{r}
+query_unica = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1',
+  WHEN idanomal IN ('não') THEN '0',
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN idademae < 18 THEN '1'
+	WHEN idademae >= 18 AND idademae < 35 THEN '0'
+	WHEN idademae >= 35 THEN '1'
+	ELSE 'não informado'
+  END AS idade_mae_binario,
+  CASE
+  WHEN escmae IN c('Nenhum', '1 a 3 anos') THEN '1'
+  WHEN escmae IN c('4 a 7 anos', '8 a 11 anos','12 ou mais') THEN '0'
+  ELSE 'não informado'
+  END AS escmae_binario,
+  CASE
+  WHEN qtdfilmort == 0 THEN '0',
+  WHEN qtdfilmort == 1 THEN '1',
+  WHEN qtdfilmort >= 2 THEN '1',
+  ELSE 'não informado'
+  END AS qtd_filmort_binario,
+  CASE 
+  WHEN consultas IN c('Nenhuma', '1 a 3 vezes') THEN '0'
+  WHEN consultas IN c('4 a 6 vezes', '7 ou mais vezes') THEN '1'
+  ELSE 'não informado'
+  END AS consultas_binario,
+  CASE
+  WHEN gestacao IN c('Menos de 22 semanas', '22 a 27 semanas', '28 a 31 semanas', '42 semanas ou mais') THEN '1'
+	WHEN gestacao IN ('37 a 41 semanas') THEN '0'
+	ELSE 'não informado'
+  END AS gestacao_binario,
+  CASE 
+  WHEN gravidez IN c('Dupla','Tripla e mais') THEN '1'
+  WHEN gravidez In c('Única') THEN '0'
+  ELSE 'não informado'
+  END AS gravidez_binario,
+  CASE
+  WHEN parto IN c('Cesáreo') THEN '1'
+  WHEN parto IN c('Vaginal') THEN '0'
+  ELSE 'não informado'
+  END parto_binario,
+  CASE
+  WHEN sexo IN ('Feminino') THEN '0'
+	WHEN sexo IN ('Masculino')  THEN '1'
+	ELSE 'não informado'
+  END AS sexo_bb_binario,
+  CASE
+  WHEN apgar5 < 7 THEN '1'
+	WHEN apgar5 >= 7 THEN '0'
+	ELSE 'não informado'
+  END AS apgar_5_binario,
+   CASE
+  WHEN peso < 2500 THEN '1'
+	WHEN peso >= 2500 THEN '0'
+	ELSE 'não informado'
+  END AS peso_rn_binario,
+  FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, idanomal_binario, idade_mae_binario,escmae_binario, qtd_filmort_binario,consultas_binario, gestacao_binario, gravidez_binario, parto_binario, sexo_bb_binario, apgar_5_binario, peso_rn_binario
+  ")
+
+df_b = dbGetQuery(con, query_unica)
+df_b = df_b %>%
+  pivot_longer(
+    cols = starts_with("idanomal_binario"):last_col(), # Seleciona todas as colunas binárias
+    names_to = "condicionais",  # Coluna com os nomes das variáveis
+    values_to = "valor_binario" # Coluna com os valores 
+  )
+
+#Teste Q de Cochran
+cochran_qtest(df_b, valor_binario ~ condicionais|ID)  #trocar pelo nome da coluna da id
+
+#Comparações entre pares pelo teste de McNemar
+
+pairwise_mcnemar_test(df_b, valor_binario ~ condicionais|ID)  #trocar pelo nome da coluna da id
+
+
+
+
+```
+
+Queries, transformações e cálculo - individuais
+
+Lembrete: usar categorias e não valor numérico. 
+Lembrete: 1 equivale a sim ou maior risco/ 0 equivale a não ou menor risco
+
+Idade materna
+
+```{r}
+query6= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1',
+  WHEN idanomal IN ('não') THEN '0',
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN idademae < 18 THEN '1'
+	WHEN idademae >= 18 AND idademae < 35 THEN '0'
+	WHEN idademae >= 35 THEN '1'
+	ELSE 'não informado'
+  END AS idade_mae_binario,
+
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, idade_mae_binario, idanomal_binario
+")
+
+df6 = dbGetQuery(con, query6)
+
+df6 = df6 %>%
+
+```
+
+Educação
+
+```{r}
+query8= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN escmae IN c('Nenhum', '1 a 3 anos') THEN '1'
+  WHEN escmae IN c('4 a 7 anos', '8 a 11 anos','12 ou mais') THEN '0'
+  ELSE 'não informado'
+  END AS escmae_binario,
+
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, escmae_binario, idanomal
+")
+
+df8 = dbGetQuery(con, query8)
+df8 = df8 %>% 
+```
+
+Aborto
+
+```{r}
+query9= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN qtdfilmort == 0 THEN '0',
+  WHEN qtdfilmort == 1 THEN '1',
+  WHEN qtdfilmort >= 2 THEN '1',
+  ELSE 'não informado'
+  END AS qtd_filmort_binario
+  
+
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, qtd_filmort_binario, idanomal_binario
+")
+
+df9 = dbGetQuery(con, query9)
+
+df9 = df9 %>% 
+
+```
+
+Consultas pré-natal
+
+```{r} 
+query10 = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE 
+  WHEN consultas IN c('Nenhuma', '1 a 3 vezes') THEN '0'
+  WHEN consultas IN c('4 a 6 vezes', '7 ou mais vezes') THEN '1'
+  ELSE 'não informado'
+  END AS consultas_binario,
+
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc,consultas_binario,idanomal_binario
+")
+  
+df10 = dbGetQuery(con, query10)
+  
+df10 =df10 %>% 
+```
+
+Semanas de gravidez
+
+```{r}
+query11= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN gestacao IN c('Menos de 22 semanas', '22 a 27 semanas', '28 a 31 semanas', '42 semanas ou mais') THEN '1'
+	WHEN gestacao IN ('37 a 41 semanas') THEN '0'
+	ELSE 'não informado'
+  END AS gestacao_binario,
+
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc,,gestacao_binario, idanomal_binario
+")
+  
+df11 = dbGetQuery(con, query11)
+  
+df11 = df11 %>% 
+```
+
+Tipo de gravidez
+
+```{r}
+query12 = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE 
+  WHEN gravidez IN c('Dupla','Tripla e mais') THEN '1'
+  WHEN gravidez In c('Única') THEN '0'
+  ELSE 'não informado'
+  END AS gravidez_binario,
+
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc,gravidez_binario, idanomal_binario
+")
+  
+df12 = dbGetQuery(con, query12)
+  
+df12 = df12 %>% 
+```
+
+Tipo de parto
+
+```{r}
+query13= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN parto IN c('Cesáreo') THEN '1'
+  WHEN parto IN c('Vaginal') THEN '0'
+  ELSE 'não informado'
+  END parto_binario,
+
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, parto_binario, idanomal
+")
+  
+df13 = dbGetQuery(con, query13)
+  
+df13 = df13 %>% 
+```
+
+Sexo do recém nascido
+
+```{r}
+query14= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN sexo IN ('Feminino') THEN '0'
+	WHEN sexo IN ('Masculino')  THEN '1'
+	ELSE 'não informado'
+  END AS sexo_bb_binario,
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc,sexo_bb_binario, idanomal_binario
+")
+  
+df14 = dbGetQuery(con, query14)
+  
+df14 = df14 %>% 
+```
+
+Apgar5
+
+```{r}
+query15= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+ CASE 
+  WHEN idanomal IN ('sim') THEN '1'
+  WHEN idanomal IN ('não') THEN '0'
+  ELSE 'não informado'
+  END AS idanomal_binario,
+  CASE
+  WHEN apgar5 < 7 THEN '1'
+	WHEN apgar5 >= 7 THEN '0'
+	ELSE 'não informado'
+  END AS apgar_5_binario,
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc,apgar_5_binario, idanomal_binario
+")
+  
+df15= dbGetQuery(con, query15)
+  
+df15 = df15 %>% 
+```
+
+Peso do recém nascido
+
+```{r}
+query16 = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  idanomal,
+  CASE
+  WHEN peso < 2500 THEN '1'
+	WHEN peso >= 2500 THEN '0'
+	ELSE 'não informado'
+  END AS peso_rn_binario,
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc,peso_rn_binario, idanomal_binario
+")
+  
+df16= dbGetQuery(con, query16)
+  
+df16 = df16 
+```

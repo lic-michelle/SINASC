@@ -1,0 +1,250 @@
+---
+title: "Untitled"
+format: html
+---
+
+-- Conexao
+
+```{r}
+library(DBI)
+library(RPostgres)
+library(tidyverse)
+library(trendchange)
+
+
+con = dbConnect(drv = RPostgres::Postgres(),
+                dbname="data_sus",
+                host = "150.161.248.197",
+                port = "5432",
+                user = "michelle",
+                password = "gratiluz")
+```
+
+--Anomalias congênitas
+
+```{r}
+#Sem anomalias 
+query_nasc_sem_anomal_ano = paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+COUNT(*) AS n
+FROM 
+  sinasc
+WHERE idanomal = 'não'
+GROUP BY 
+  ano_nasc,idanomal 
+") 
+nasc_sem_anomal_ano = dbGetQuery(con, query_nasc_sem_anomal_ano)
+
+#Com anomalias
+query4_1= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  mun_res_uf,
+  anomal_prioritarias,
+COUNT(*) AS cont_anomal
+FROM 
+  sinasc
+WHERE anomal_prioritarias <> 'outras_anomalias'
+GROUP BY 
+  ano_nasc, mun_res_uf, anomal_prioritarias
+")
+
+df4_1 = dbGetQuery(con, query4_1)
+
+anomalias_p1 =  df4_1 %>% 
+  complete(ano_nasc,anomal_prioritarias) %>% 
+  mutate(cont_anomal=replace_na(cont_anomal,0)) %>% 
+  left_join(.,nasc_sem_anomal_ano,join_by(ano_nasc == ano_nasc)) %>% 
+  mutate(incidencia = (cont_anomal/(cont_anomal + n))*1e5) 
+
+```
+
+```{r}
+cardiopatias_congenitas = anomalias_p1  %>% 
+  filter(anomal_prioritarias == "cardiopatias_congenitas") %>%
+  group_by(ano_nasc,incidencia)
+attach(cardiopatias_congenitas) 
+sqmk(incidencia,2010) 
+```
+
+```{r}
+defeitos_orgaos_genitais = anomalias_p1  %>%   
+  filter(anomal_prioritarias == "defeitos_orgaos_genitais") %>%
+  group_by(ano_nasc,defeitos_orgaos_genitais)
+
+sqmk(defeitos_orgaos_genitais$incidencia,2010) 
+
+```
+
+```{r}
+defeitos_tubos_neurais = anomalias_p1  %>% 
+  filter(anomal_prioritarias == "defeitos_tubos_neurais") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(defeitos_tubos_neurais$incidencia,2010) 
+```
+
+```{r}
+microcefalia = anomalias_p1 %>% 
+  filter(anomal_prioritarias == "microcefalia") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(microcefalia$incidencia,2010) 
+
+```
+
+```{r}
+sindorme_down = anomalias_p1 %>% 
+  filter(anomal_prioritarias == "sindorme_down") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(sindorme_down$incidencia,2010) 
+```
+
+```{r}
+defeitos_membros = anomalias_p1 %>% 
+  filter(anomal_prioritarias == "defeitos_membros") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(defeitos_membros$incidencia,2010) 
+
+```
+
+```{r}
+defeitos_parede_abdominal = anomalias_p1 %>%
+  filter(anomal_prioritarias == "defeitos_parede_abdominal") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(defeitos_parede_abdominal$incidencia,2010) 
+```
+
+```{r}
+fendas_orais = anomalias_p1 %>% 
+  filter(anomal_prioritarias == "fendas_orais") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(fendas_orais$incidencia,2010) 
+```
+
+
+-- Idade da mãe
+```{r}
+query6= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  idanomal,
+  idademae,
+COUNT(*) AS n
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, idademae, idanomal
+")
+
+df6 = dbGetQuery(con, query6)
+
+faixaetaria_6 = df6 %>%
+  mutate(faixa_etaria_mae = case_when(
+    idademae < 18 ~ "menor de 18 anos",
+    idademae >= 18 & idademae < 35 ~ "de 18 a 34 anos",
+    idademae >= 35 ~ "maior ou igual a 35 anos",
+    is.na(idademae) ~ "não informado"
+  )) %>%
+ group_by(ano_nasc, faixa_etaria_mae, idanomal)
+ pivot_wider(names_from = idanomal, values_from = n) %>%
+ rowwise() %>% 
+ mutate(incidencia = (sim / (sim + não)) * 1e5)
+```
+
+```{r}
+idade_menor_dezoito = faixaetaria_6 %>%
+ filter(faixa_etaria_mae == "menor de 18 anos") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(menor_dezoito$incidencia,2010)
+```
+
+```{r}
+idade_dezoito_ou_mais = faixaetaria_6 %>%
+ filter(faixa_etaria_mae == "de 18 a 34 anos") %>%
+ group_by(ano_nasc,incidencia)
+
+sqmk(dezoito_ou_mais$incidencia,2010)
+
+ ```
+
+
+```{r}
+idade_trintaequatro_ou_mais= faixaetaria_6 %>%
+  filter(faixa_etaria_mae == "maior ou igual a 35 anos") %>%
+  group_by(ano_nasc,incidencia)
+
+sqmk(trintaequatro_ou_mais$incidencia,2010)
+
+```
+
+-- Escolaridade 
+```{r}
+query8= paste0("
+SELECT 
+  EXTRACT(YEAR FROM dtnasc) AS ano_nasc,
+  idanomal,
+  escmae,
+COUNT(*) AS n
+FROM 
+  sinasc
+GROUP BY 
+  ano_nasc, escmae, idanomal
+")
+
+#create dataframe with the response
+df8 = dbGetQuery(con, query8)
+```
+
+```{r}
+esc_nenhum= df8 %>%
+  filter(escmae =="Nenhum")
+  group_by(ano_nasc,incidencia)
+
+sqmk(nenhum$incidencia,2010)
+```
+
+```{r}
+esc_umAtres= df8>%>
+  filter(escmae =="1 a 3 anos")
+  group_by(ano_nasc,incidencia)
+
+sqmk(esc_umAtres$incidencia,2010)
+
+```
+
+```{r}
+esc_quatroAsete= df8>%>
+  filter(escmae =="4 a 7 anos")
+  group_by(ano_nasc,incidencia)
+
+sqmk(esc_quatroAsete$incidencia,2010)
+
+```
+
+```{r}
+esc_oitoAonze= df8>%>
+  filter(escmae =="8 a 11 anos")
+  group_by(ano_nasc,incidencia)
+
+sqmk(esc_oitoAonze$incidencia,2010)
+```
+
+```{r}
+esc_dozeOUmais= df8>%>
+  filter(escmae =="12 ou mais")
+  group_by(ano_nasc,incidencia)
+
+sqmk(esc_dozeOUmais$incidencia,2010)
+```
+
+Consultas Pré-Natasl
+```{r}
+
+```
